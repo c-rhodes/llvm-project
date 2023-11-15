@@ -284,6 +284,11 @@ def i64x8     : ValueType<512,  195>;  // 8 Consecutive GPRs (AArch64)
 def aarch64svcount
               : ValueType<16,   196>;  // AArch64 predicate-as-counter
 def spirvbuiltin : ValueType<0,  197>; // SPIR-V's builtin type
+def aarch64_za_b : ValueType<2048, 198>;  // AArch64 8-bit tile.
+def aarch64_za_h : ValueType<1024, 199>;  // AArch64 16-bit tile.
+def aarch64_za_s : ValueType<512,  200>;  // AArch64 32-bit tile.
+def aarch64_za_d : ValueType<256,  201>;  // AArch64 64-bit tile.
+def aarch64_za_q : ValueType<128,  202>;  // AArch64 128-bit tile.
 
 def token      : ValueType<0, 248>;  // TokenTy
 def MetadataVT : ValueType<0, 249> { // Metadata

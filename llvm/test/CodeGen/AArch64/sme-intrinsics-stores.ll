@@ -30,6 +30,35 @@ define void @st1b_with_addr_offset(<vscale x 16 x i1> %pg, ptr %ptr, i64 %index,
   ret void;
 }
 
+define void @x_st1b(<vscale x 16 x i1> %pg, ptr %ptr, i32 %sliceidx) {
+; CHECK-LABEL: x_st1b:
+; CHECK:       // %bb.0:
+; CHECK-NEXT:    mov w12, w1
+; CHECK-NEXT:    mov w13, wzr
+; CHECK-NEXT:    st1b {za0h.b[w12, 15]}, p0, [x0]
+; CHECK-NEXT:    st1b {za0v.b[w13, 0]}, p0, [x0]
+; CHECK-NEXT:    ret
+  %tileslice = add i32 %sliceidx, 15
+  call void @llvm.aarch64.sme.x.st1b.horiz(<vscale x 16 x i1> %pg, ptr %ptr, target("aarch64.za.b") undef, i32 %tileslice)
+  call void @llvm.aarch64.sme.x.st1b.vert(<vscale x 16 x i1> %pg, ptr %ptr, target("aarch64.za.b") undef, i32 0)
+  ret void;
+}
+
+define void @x_st1b_with_addr_offset(<vscale x 16 x i1> %pg, ptr %ptr, i64 %index, i32 %sliceidx) {
+; CHECK-LABEL: x_st1b_with_addr_offset:
+; CHECK:       // %bb.0:
+; CHECK-NEXT:    mov w13, wzr
+; CHECK-NEXT:    mov w12, w2
+; CHECK-NEXT:    st1b {za0h.b[w13, 0]}, p0, [x0, x1]
+; CHECK-NEXT:    st1b {za0v.b[w12, 15]}, p0, [x0, x1]
+; CHECK-NEXT:    ret
+  %base = getelementptr i8, ptr %ptr, i64 %index
+  %tileslice = add i32 %sliceidx, 15
+  call void @llvm.aarch64.sme.x.st1b.horiz(<vscale x 16 x i1> %pg, ptr %base, target("aarch64.za.b") undef, i32 0)
+  call void @llvm.aarch64.sme.x.st1b.vert(<vscale x 16 x i1> %pg, ptr %base, target("aarch64.za.b") undef, i32 %tileslice)
+  ret void;
+}
+
 define void @st1h(<vscale x 8 x i1> %pg, ptr %ptr, i32 %sliceidx) {
 ; CHECK-LABEL: st1h:
 ; CHECK:       // %bb.0:
@@ -489,13 +518,13 @@ define void @test_sink_tile0_offset_operand(<vscale x 4 x i1> %pg, ptr %src, i32
 ; CHECK-LABEL: test_sink_tile0_offset_operand:
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov w12, w1
-; CHECK-NEXT:  .LBB24_1: // %for.body
+; CHECK-NEXT:  .LBB26_1: // %for.body
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    st1w {za0h.s[w12, 0]}, p0, [x0]
 ; CHECK-NEXT:    subs w2, w2, #1
 ; CHECK-NEXT:    st1w {za0h.s[w12, 1]}, p0, [x0]
 ; CHECK-NEXT:    st1w {za0h.s[w12, 2]}, p0, [x0]
-; CHECK-NEXT:    b.ne .LBB24_1
+; CHECK-NEXT:    b.ne .LBB26_1
 ; CHECK-NEXT:  // %bb.2: // %exit
 ; CHECK-NEXT:    ret
 entry:
@@ -526,6 +555,9 @@ declare void @llvm.aarch64.sme.st1h.vert(<vscale x 8 x i1>, ptr, i32, i32)
 declare void @llvm.aarch64.sme.st1w.vert(<vscale x 4 x i1>, ptr, i32, i32)
 declare void @llvm.aarch64.sme.st1d.vert(<vscale x 2 x i1>, ptr, i32, i32)
 declare void @llvm.aarch64.sme.st1q.vert(<vscale x 1 x i1>, ptr, i32, i32)
+
+declare void @llvm.aarch64.sme.x.st1b.horiz(<vscale x 16 x i1>, ptr, target("aarch64.za.b"), i32)
+declare void @llvm.aarch64.sme.x.st1b.vert(<vscale x 16 x i1>, ptr, target("aarch64.za.b"), i32)
 
 declare void @llvm.aarch64.sme.str(i32, ptr, i32)
 declare i64 @llvm.vscale.i64()

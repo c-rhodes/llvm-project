@@ -16,4 +16,5 @@ add_mlir_conversion_library(MLIRLLVMCommonConversion
   MLIRLLVMDialect
   MLIRSupport
   MLIRTransforms
+  MLIRArmSMEUtils
   )

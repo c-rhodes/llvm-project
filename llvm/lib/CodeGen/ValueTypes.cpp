@@ -176,6 +176,16 @@ std::string EVT::getEVTString() const {
   case MVT::externref: return "externref";
   case MVT::aarch64svcount:
     return "aarch64svcount";
+  case MVT::aarch64_za_b:
+    return "aarch64_za_b";
+  case MVT::aarch64_za_h:
+    return "aarch64_za_h";
+  case MVT::aarch64_za_s:
+    return "aarch64_za_s";
+  case MVT::aarch64_za_d:
+    return "aarch64_za_d";
+  case MVT::aarch64_za_q:
+    return "aarch64_za_q";
   case MVT::spirvbuiltin:
     return "spirvbuiltin";
   }
@@ -216,6 +226,16 @@ Type *EVT::getTypeForEVT(LLVMContext &Context) const {
   case MVT::x86mmx:  return Type::getX86_MMXTy(Context);
   case MVT::aarch64svcount:
     return TargetExtType::get(Context, "aarch64.svcount");
+  case MVT::aarch64_za_b:
+    return TargetExtType::get(Context, "aarch64.za.b");
+  case MVT::aarch64_za_h:
+    return TargetExtType::get(Context, "aarch64.za.h");
+  case MVT::aarch64_za_s:
+    return TargetExtType::get(Context, "aarch64.za.s");
+  case MVT::aarch64_za_d:
+    return TargetExtType::get(Context, "aarch64.za.d");
+  case MVT::aarch64_za_q:
+    return TargetExtType::get(Context, "aarch64.za.q");
   case MVT::x86amx:  return Type::getX86_AMXTy(Context);
   case MVT::i64x8:   return IntegerType::get(Context, 512);
   case MVT::externref: return Type::getWasm_ExternrefTy(Context);
@@ -590,6 +610,16 @@ MVT MVT::getVT(Type *Ty, bool HandleUnknown){
     TargetExtType *TargetExtTy = cast<TargetExtType>(Ty);
     if (TargetExtTy->getName() == "aarch64.svcount")
       return MVT(MVT::aarch64svcount);
+    if (TargetExtTy->getName() == "aarch64.za.b")
+      return MVT(MVT::aarch64_za_b);
+    if (TargetExtTy->getName() == "aarch64.za.h")
+      return MVT(MVT::aarch64_za_h);
+    if (TargetExtTy->getName() == "aarch64.za.s")
+      return MVT(MVT::aarch64_za_s);
+    if (TargetExtTy->getName() == "aarch64.za.d")
+      return MVT(MVT::aarch64_za_d);
+    if (TargetExtTy->getName() == "aarch64.za.q")
+      return MVT(MVT::aarch64_za_q);
     else if (TargetExtTy->getName().starts_with("spirv."))
       return MVT(MVT::spirvbuiltin);
     if (HandleUnknown)

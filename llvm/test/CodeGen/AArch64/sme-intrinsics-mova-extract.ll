@@ -80,6 +80,84 @@ define <vscale x 16 x i8> @extract_col_b(<vscale x 16 x i8> %zd, <vscale x 16 x 
   ret <vscale x 16 x i8> %z0
 }
 
+define <vscale x 16 x i8> @x_extract_row_b(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, i32 %tileslice) {
+; CHECK-LABEL: x_extract_row_b:
+; CHECK:       // %bb.0:
+; CHECK-NEXT:    mov z1.d, z0.d
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov w12, w0
+; CHECK-NEXT:    mov z1.b, p0/m, za0h.b[w12, 0]
+; CHECK-NEXT:    mov z2.b, p0/m, za0h.b[w12, 2]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0h.b[w12, 4]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0h.b[w12, 6]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0h.b[w12, 8]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0h.b[w12, 10]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0h.b[w12, 12]
+; CHECK-NEXT:    mov z0.b, p0/m, za0h.b[w12, 14]
+; CHECK-NEXT:    mov z0.d, z1.d
+; CHECK-NEXT:    ret
+  %z0 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice)
+  %tileslice.2 = add i32 %tileslice, 2
+  %z1 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.2)
+  %tileslice.4 = add i32 %tileslice, 4
+  %z2 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.4)
+  %tileslice.6 = add i32 %tileslice, 6
+  %z3 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.6)
+  %tileslice.8 = add i32 %tileslice, 8
+  %z4 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.8)
+  %tileslice.10 = add i32 %tileslice, 10
+  %z5 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.10)
+  %tileslice.12 = add i32 %tileslice, 12
+  %z6 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.12)
+  %tileslice.14 = add i32 %tileslice, 14
+  %z7 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.14)
+  ret <vscale x 16 x i8> %z0
+}
+
+define <vscale x 16 x i8> @x_extract_col_b(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, i32 %tileslice) {
+; CHECK-LABEL: x_extract_col_b:
+; CHECK:       // %bb.0:
+; CHECK-NEXT:    mov z1.d, z0.d
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov w12, w0
+; CHECK-NEXT:    mov z1.b, p0/m, za0v.b[w12, 0]
+; CHECK-NEXT:    mov z2.b, p0/m, za0v.b[w12, 2]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0v.b[w12, 4]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0v.b[w12, 6]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0v.b[w12, 8]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0v.b[w12, 10]
+; CHECK-NEXT:    mov z2.d, z0.d
+; CHECK-NEXT:    mov z2.b, p0/m, za0v.b[w12, 12]
+; CHECK-NEXT:    mov z0.b, p0/m, za0v.b[w12, 14]
+; CHECK-NEXT:    mov z0.d, z1.d
+; CHECK-NEXT:    ret
+  %z0 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice)
+  %tileslice.2 = add i32 %tileslice, 2
+  %z1 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.2)
+  %tileslice.4 = add i32 %tileslice, 4
+  %z2 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.4)
+  %tileslice.6 = add i32 %tileslice, 6
+  %z3 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.6)
+  %tileslice.8 = add i32 %tileslice, 8
+  %z4 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.8)
+  %tileslice.10 = add i32 %tileslice, 10
+  %z5 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.10)
+  %tileslice.12 = add i32 %tileslice, 12
+  %z6 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.12)
+  %tileslice.14 = add i32 %tileslice, 14
+  %z7 = call <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8> %zd, <vscale x 16 x i1> %pg, target("aarch64.za.b") undef, i32 %tileslice.14)
+  ret <vscale x 16 x i8> %z0
+}
+
 define <vscale x 8 x i16> @extract_row_h(<vscale x 8 x i16> %zd, <vscale x 8 x i1> %pg, i32 %tileslice) {
 ; CHECK-LABEL: extract_row_h:
 ; CHECK:       // %bb.0:
@@ -440,7 +518,7 @@ define <vscale x 4 x i32> @test_sink_offset_operand(<vscale x 4 x i1> %pg, i32 %
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov z0.s, #0 // =0x0
 ; CHECK-NEXT:    mov w12, w0
-; CHECK-NEXT:  .LBB26_1: // %for.body
+; CHECK-NEXT:  .LBB28_1: // %for.body
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    mov z1.d, z0.d
 ; CHECK-NEXT:    mov z2.d, z0.d
@@ -449,7 +527,7 @@ define <vscale x 4 x i32> @test_sink_offset_operand(<vscale x 4 x i1> %pg, i32 %
 ; CHECK-NEXT:    mov z1.s, p0/m, za0h.s[w12, 0]
 ; CHECK-NEXT:    mov z2.s, p0/m, za0h.s[w12, 1]
 ; CHECK-NEXT:    mov z3.s, p0/m, za0h.s[w12, 2]
-; CHECK-NEXT:    b.ne .LBB26_1
+; CHECK-NEXT:    b.ne .LBB28_1
 ; CHECK-NEXT:  // %bb.2: // %exit
 ; CHECK-NEXT:    add z0.s, z1.s, z2.s
 ; CHECK-NEXT:    add z0.s, z0.s, z3.s
@@ -490,6 +568,9 @@ declare <vscale x 4 x i32> @llvm.aarch64.sme.read.vert.nxv4i32(<vscale x 4 x i32
 declare <vscale x 4 x float> @llvm.aarch64.sme.read.vert.nxv4f32(<vscale x 4 x float>, <vscale x 4 x i1>, i32, i32)
 declare <vscale x 2 x i64> @llvm.aarch64.sme.read.vert.nxv2i64(<vscale x 2 x i64>, <vscale x 2 x i1>, i32, i32)
 declare <vscale x 2 x double> @llvm.aarch64.sme.read.vert.nxv2f64(<vscale x 2 x double>, <vscale x 2 x i1>, i32, i32)
+
+declare <vscale x 16 x i8> @llvm.aarch64.sme.x.read.horiz.nxv16i8(<vscale x 16 x i8>, <vscale x 16 x i1>, target("aarch64.za.b"), i32)
+declare <vscale x 16 x i8> @llvm.aarch64.sme.x.read.vert.nxv16i8(<vscale x 16 x i8>, <vscale x 16 x i1>, target("aarch64.za.b"), i32)
 
 declare <vscale x 16 x i8> @llvm.aarch64.sme.readq.horiz.nxv16i8(<vscale x 16 x i8>, <vscale x 16 x i1>, i32, i32)
 declare <vscale x 8 x i16> @llvm.aarch64.sme.readq.horiz.nxv8i16(<vscale x 8 x i16>, <vscale x 8 x i1>, i32, i32)

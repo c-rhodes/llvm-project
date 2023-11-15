@@ -120,7 +120,9 @@ namespace llvm {
 
     /// Return true if this is a custom target type that has a scalable size.
     bool isScalableTargetExtVT() const {
-      return SimpleTy == MVT::aarch64svcount;
+      return SimpleTy == MVT::aarch64svcount || SimpleTy == MVT::aarch64_za_b ||
+             SimpleTy == MVT::aarch64_za_h || SimpleTy == MVT::aarch64_za_s ||
+             SimpleTy == MVT::aarch64_za_d || SimpleTy == MVT::aarch64_za_q;
     }
 
     /// Return true if the type is a scalable type.
@@ -304,7 +306,10 @@ namespace llvm {
     TypeSize getSizeInBits() const {
       static constexpr TypeSize SizeTable[] = {
 #define GET_VT_ATTR(Ty, N, Sz, Any, Int, FP, Vec, Sc)                          \
-  TypeSize(Sz, Sc || Ty == aarch64svcount /* FIXME: Not in the td. */),
+  TypeSize(Sz, Sc || Ty == aarch64svcount || Ty == aarch64_za_b ||             \
+                   Ty == aarch64_za_h || Ty == aarch64_za_s ||                 \
+                   Ty == aarch64_za_d ||                                       \
+                   Ty == aarch64_za_q /* FIXME: Not in the td. */),
 #include "llvm/CodeGen/GenVT.inc"
 #undef GET_VT_ATTR
       };

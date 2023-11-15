@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "AArch64ExpandImm.h"
 #include "AArch64InstrInfo.h"
+#include "AArch64ExpandImm.h"
 #include "AArch64FrameLowering.h"
 #include "AArch64MachineFunctionInfo.h"
 #include "AArch64PointerAuth.h"
@@ -21,6 +21,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/CodeGen/LivePhysRegs.h"
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineCombinerPattern.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
@@ -1941,7 +1942,9 @@ bool AArch64InstrInfo::removeCmpToZeroOrOne(
 
 bool AArch64InstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
   if (MI.getOpcode() != TargetOpcode::LOAD_STACK_GUARD &&
-      MI.getOpcode() != AArch64::CATCHRET)
+      MI.getOpcode() != AArch64::CATCHRET &&
+      MI.getOpcode() != AArch64::SpillZAPseudo &&
+      MI.getOpcode() != AArch64::FillZAPseudo)
     return false;
 
   MachineBasicBlock &MBB = *MI.getParent();
@@ -1969,6 +1972,159 @@ bool AArch64InstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
         .addReg(AArch64::X0)
         .addMBB(TargetMBB)
         .addImm(0);
+    return true;
+  }
+
+  if (MI.getOpcode() == AArch64::SpillZAPseudo) {
+    MachineBasicBlock &MBB = *MI.getParent();
+    MachineFunction &MF = *MBB.getParent();
+    DebugLoc DL = MBB.findDebugLoc(MI);
+
+    MachineBasicBlock *BB = &MBB;
+    const BasicBlock *LLVM_BB = BB->getBasicBlock();
+
+    MachineBasicBlock *LoopMBB = MF.CreateMachineBasicBlock(LLVM_BB);
+    MachineBasicBlock *DoneMBB = MF.CreateMachineBasicBlock(LLVM_BB);
+
+    MachineFunction::iterator It = ++(BB->getIterator());
+
+    MF.insert(It, LoopMBB);
+    MF.insert(It, DoneMBB);
+
+    // Transfer the remainder of BB and its successor edges to DoneMBB.
+    DoneMBB->splice(DoneMBB->begin(), BB,
+                    std::next(std::next(MachineBasicBlock::iterator(MI))),
+                    BB->end());
+    DoneMBB->transferSuccessorsAndUpdatePHIs(BB);
+
+    BB->addSuccessor(LoopMBB);
+
+    LoopMBB->addSuccessor(LoopMBB);
+    LoopMBB->addSuccessor(DoneMBB);
+
+    // TODO: support other tile sizes.
+    unsigned Opc = AArch64::ST1_MXIPXX_H_H;
+
+    unsigned Tile = MI.getOperand(0).getReg();
+    unsigned NumTileSlices = MI.getOperand(1).getReg();
+    unsigned TileSliceIdx = MI.getOperand(2).getReg();
+    unsigned Pred = MI.getOperand(3).getReg();
+    unsigned Base = MI.getOperand(4).getReg();
+
+    BuildMI(LoopMBB, DL, get(Opc))
+        .addReg(Tile, RegState::Undef)         // tile
+        .addReg(TileSliceIdx, RegState::Undef) // slice index register
+        .addImm(0)                             // slice index offset
+        .addReg(Pred, RegState::Undef)         // predicate register
+        .addReg(Base, RegState::Undef)
+        .addReg(AArch64::XZR)
+        .addMemOperand(*MI.memoperands_begin());
+
+    // increment tile slice index
+    BuildMI(LoopMBB, DL, get(AArch64::ADDWri), TileSliceIdx)
+        .addReg(TileSliceIdx)
+        .addImm(1)
+        .addImm(0);
+
+    // increment addr offset
+    BuildMI(LoopMBB, DL, get(AArch64::ADDVL_XXI), Base).addReg(Base).addImm(1);
+
+    MCRegister TileSliceIdxGPR64 = TRI->getMatchingSuperReg(
+        TileSliceIdx, AArch64::sub_32, &AArch64::GPR64RegClass);
+
+    // cmp tile_slice_idx, num_tile_slices
+    BuildMI(LoopMBB, DL, get(AArch64::SUBSXrs), AArch64::XZR)
+        .addReg(TileSliceIdxGPR64)
+        .addReg(NumTileSlices)
+        .addImm(0);
+
+    // if (TileSliceIdx < NumTileSlices) b .loop
+    BuildMI(LoopMBB, DL, get(AArch64::Bcc))
+        .addImm(AArch64CC::LT)
+        .addMBB(LoopMBB)
+        .addReg(AArch64::NZCV, RegState::Implicit | RegState::Kill);
+
+    recomputeLiveIns(*BB);
+    recomputeLiveIns(*LoopMBB);
+    recomputeLiveIns(*DoneMBB);
+
+    MI.eraseFromParent(); // The pseudo instruction is gone now.
+    return true;
+  }
+
+  if (MI.getOpcode() == AArch64::FillZAPseudo) {
+    MachineBasicBlock &MBB = *MI.getParent();
+    MachineFunction &MF = *MBB.getParent();
+    DebugLoc DL = MBB.findDebugLoc(MI);
+
+    MachineBasicBlock *BB = &MBB;
+    const BasicBlock *LLVM_BB = BB->getBasicBlock();
+
+    MachineBasicBlock *LoopMBB = MF.CreateMachineBasicBlock(LLVM_BB);
+    MachineBasicBlock *DoneMBB = MF.CreateMachineBasicBlock(LLVM_BB);
+
+    MachineFunction::iterator It = ++(BB->getIterator());
+
+    MF.insert(It, LoopMBB);
+    MF.insert(It, DoneMBB);
+
+    DoneMBB->splice(DoneMBB->begin(), BB,
+                    std::next(std::next(MachineBasicBlock::iterator(MI))),
+                    BB->end());
+    DoneMBB->transferSuccessorsAndUpdatePHIs(BB);
+
+    BB->addSuccessor(LoopMBB);
+
+    LoopMBB->addSuccessor(LoopMBB);
+    LoopMBB->addSuccessor(DoneMBB);
+
+    // TODO: support other tile sizes.
+    unsigned Opc = AArch64::LD1_MXIPXX_H_H;
+
+    unsigned Tile = MI.getOperand(0).getReg();
+    unsigned NumTileSlices = MI.getOperand(1).getReg();
+    unsigned TileSliceIdx = MI.getOperand(2).getReg();
+    unsigned Pred = MI.getOperand(3).getReg();
+    unsigned Base = MI.getOperand(4).getReg();
+
+    BuildMI(LoopMBB, DL, get(Opc))
+        .addReg(Tile, getDefRegState(true))    // tile
+        .addReg(Tile)                          // tile (input-tied)
+        .addReg(TileSliceIdx, RegState::Undef) // slice index register
+        .addImm(0)                             // slice index offset
+        .addReg(Pred, RegState::Undef)         // predicate register
+        .addReg(Base, RegState::Undef)
+        .addReg(AArch64::XZR)
+        .addMemOperand(*MI.memoperands_begin());
+
+    // increment tile slice index
+    BuildMI(LoopMBB, DL, get(AArch64::ADDWri), TileSliceIdx)
+        .addReg(TileSliceIdx)
+        .addImm(1)
+        .addImm(0);
+
+    // increment addr offset
+    BuildMI(LoopMBB, DL, get(AArch64::ADDVL_XXI), Base).addReg(Base).addImm(1);
+
+    MCRegister TileSliceIdxGPR64 = TRI->getMatchingSuperReg(
+        TileSliceIdx, AArch64::sub_32, &AArch64::GPR64RegClass);
+
+    // cmp tile_slice_idx, num_tile_slices
+    BuildMI(LoopMBB, DL, get(AArch64::SUBSXrs), AArch64::XZR)
+        .addReg(TileSliceIdxGPR64)
+        .addReg(NumTileSlices)
+        .addImm(0);
+
+    // if (TileSliceIdx < NumTileSlices) b .loop
+    BuildMI(LoopMBB, DL, get(AArch64::Bcc))
+        .addImm(AArch64CC::LT)
+        .addMBB(LoopMBB)
+        .addReg(AArch64::NZCV, RegState::Implicit | RegState::Kill);
+
+    recomputeLiveIns(*BB);
+    recomputeLiveIns(*LoopMBB);
+    recomputeLiveIns(*DoneMBB);
+    MI.eraseFromParent(); // The pseudo instruction is gone now.
     return true;
   }
 
@@ -3936,6 +4092,17 @@ bool AArch64InstrInfo::getMemOpInfo(unsigned Opcode, TypeSize &Scale,
     MinOffset = 0;
     MaxOffset = 63;
     break;
+  case AArch64::LD1_MXIPXX_H_H:
+  case AArch64::ST1_MXIPXX_H_H:
+  case AArch64::SpillZAPseudo:
+  case AArch64::FillZAPseudo:
+    // A full vectors worth of data
+    // Width = mbytes * elements
+    Scale = TypeSize::getScalable(16);
+    Width = SVEMaxBytesPerVector;
+    MinOffset = 0;
+    MaxOffset = 63;
+    break;
   }
 
   return true;
@@ -4829,6 +4996,8 @@ void AArch64InstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
              "Unexpected register store without SVE store instructions");
       Opc = AArch64::STR_ZXI;
       StackID = TargetStackID::ScalableVector;
+    } else if (AArch64::MPR128RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("storeRegToStackSlot not implemented for .Q tiles!");
     }
     break;
   case 24:
@@ -4853,6 +5022,8 @@ void AArch64InstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
              "Unexpected register store without SVE store instructions");
       Opc = AArch64::STR_ZZXI;
       StackID = TargetStackID::ScalableVector;
+    } else if (AArch64::MPR64RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("storeRegToStackSlot not implemented for .D tiles!");
     }
     break;
   case 48:
@@ -4878,6 +5049,52 @@ void AArch64InstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
              "Unexpected register store without SVE store instructions");
       Opc = AArch64::STR_ZZZZXI;
       StackID = TargetStackID::ScalableVector;
+    } else if (AArch64::MPR32RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("storeRegToStackSlot not implemented for .S tiles!");
+    }
+    break;
+  case 128:
+    if (AArch64::MPR16RegClass.hasSubClassEq(RC)) {
+      Opc = AArch64::SpillZAPseudo;
+      StackID = TargetStackID::ScalableVector;
+      MFI.setStackID(FI, StackID);
+      MachineRegisterInfo &MRI = MF.getRegInfo();
+
+      Register NumTileSlicesReg =
+          MRI.createVirtualRegister(&AArch64::GPR64RegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::CNTH_XPiI))
+          .addReg(NumTileSlicesReg, RegState::Define)
+          .addImm(31)
+          .addImm(1);
+
+      Register SliceIdxReg =
+          MRI.createVirtualRegister(&AArch64::MatrixIndexGPR32_12_15RegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::ORRWrr), SliceIdxReg)
+          .addReg(AArch64::WZR)
+          .addReg(AArch64::WZR);
+
+      Register PredReg = MRI.createVirtualRegister(&AArch64::PPR_3bRegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::PTRUE_H), PredReg).addImm(31);
+
+      Register OffsetReg = MRI.createVirtualRegister(&AArch64::GPR64RegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::ORRXrr), OffsetReg)
+          .addReg(AArch64::XZR)
+          .addReg(AArch64::XZR);
+
+      BuildMI(MBB, MBBI, DebugLoc(), get(Opc))
+          .addReg(SrcReg)
+          .addReg(NumTileSlicesReg)
+          .addReg(SliceIdxReg)
+          .addReg(PredReg)
+          .addFrameIndex(FI)
+          .addMemOperand(MMO)
+          .addReg(OffsetReg);
+      return;
+    }
+    break;
+  case 256:
+    if (AArch64::MPR8RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("storeRegToStackSlot not implemented for .B tiles!");
     }
     break;
   }
@@ -5005,6 +5222,8 @@ void AArch64InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
              "Unexpected register load without SVE load instructions");
       Opc = AArch64::LDR_ZXI;
       StackID = TargetStackID::ScalableVector;
+    } else if (AArch64::MPR128RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("loadRegFromStackSlot not implemented for .Q tiles!");
     }
     break;
   case 24:
@@ -5029,6 +5248,8 @@ void AArch64InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
              "Unexpected register load without SVE load instructions");
       Opc = AArch64::LDR_ZZXI;
       StackID = TargetStackID::ScalableVector;
+    } else if (AArch64::MPR64RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("loadRegFromStackSlot not implemented for .D tiles!");
     }
     break;
   case 48:
@@ -5054,6 +5275,57 @@ void AArch64InstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
              "Unexpected register load without SVE load instructions");
       Opc = AArch64::LDR_ZZZZXI;
       StackID = TargetStackID::ScalableVector;
+    } else if (AArch64::MPR32RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("loadRegFromStackSlot not implemented for .S tiles!");
+    }
+    break;
+  case 128:
+    if (AArch64::MPR16RegClass.hasSubClassEq(RC)) {
+      Opc = AArch64::FillZAPseudo;
+      StackID = TargetStackID::ScalableVector;
+      MFI.setStackID(FI, StackID);
+      MachineRegisterInfo &MRI = MF.getRegInfo();
+
+      Register NumTileSlicesReg =
+          MRI.createVirtualRegister(&AArch64::GPR64RegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::CNTH_XPiI))
+          .addReg(NumTileSlicesReg, RegState::Define)
+          .addImm(31)
+          .addImm(1);
+
+      Register SliceIdxReg =
+          MRI.createVirtualRegister(&AArch64::MatrixIndexGPR32_12_15RegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::ORRWrr), SliceIdxReg)
+          .addReg(AArch64::WZR)
+          .addReg(AArch64::WZR);
+
+      Register PredReg = MRI.createVirtualRegister(&AArch64::PPR_3bRegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::PTRUE_H), PredReg).addImm(31);
+
+      Register OffsetReg = MRI.createVirtualRegister(&AArch64::GPR64RegClass);
+      BuildMI(MBB, MBBI, DebugLoc(), get(AArch64::ORRXrr), OffsetReg)
+          .addReg(AArch64::XZR)
+          .addReg(AArch64::XZR);
+
+      BuildMI(MBB, MBBI, DebugLoc(), get(Opc))
+          .addReg(DestReg, getDefRegState(true))
+          .addReg(NumTileSlicesReg)
+          .addReg(SliceIdxReg)
+          .addReg(PredReg)
+          .addFrameIndex(FI)
+          .addMemOperand(MMO)
+          .addReg(OffsetReg);
+
+      // Insert nops to prevent isKnownSentinel check firing.
+      insertNoop(MBB, *MBBI);
+      insertNoop(MBB, *MBBI);
+
+      return;
+    }
+    break;
+  case 256:
+    if (AArch64::MPR8RegClass.hasSubClassEq(RC)) {
+      llvm_unreachable("loadRegFromStackSlot not implemented for .B tiles!");
     }
     break;
   }
@@ -5630,6 +5902,8 @@ int llvm::isAArch64FrameOffsetLegal(const MachineInstr &MI,
   case AArch64::IRGstack:
   case AArch64::STGloop:
   case AArch64::STZGloop:
+  case AArch64::SpillZAPseudo:
+  case AArch64::FillZAPseudo:
     return AArch64FrameOffsetCannotUpdate;
   }
 

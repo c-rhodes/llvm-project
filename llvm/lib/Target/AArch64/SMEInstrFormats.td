@@ -10,11 +10,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-def imm_to_tile8   : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAB0>", []>;
-def imm_to_tile16  : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAH0>", []>;
-def imm_to_tile32  : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAS0>", []>;
-def imm_to_tile64  : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAD0>", []>;
-def imm_to_tile128 : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAQ0>", []>;
+def imm_to_tile8   : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAB0, MVT::aarch64_za_b>", []>;
+def imm_to_tile16  : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAH0, MVT::aarch64_za_h>", []>;
+def imm_to_tile32  : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAS0, MVT::aarch64_za_s>", []>;
+def imm_to_tile64  : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAD0, MVT::aarch64_za_d>", []>;
+def imm_to_tile128 : ComplexPattern<i32, 1, "ImmToTile<AArch64::ZAQ0, MVT::aarch64_za_q>", []>;
 
 def tileslice8   : ComplexPattern<i32 , 2, "SelectSMETileSlice<15, 1>", []>;
 def tileslice16  : ComplexPattern<i32 , 2, "SelectSMETileSlice<7,  1>", []>;
@@ -475,6 +475,7 @@ class sme_mem_ld_ss_base<bit Q, bit V, bits<2> msz, dag outs, dag ins,
   let Inst{4}     = 0b0;
 
   let mayLoad = 1;
+  let Constraints = "$ZAt = $_ZAt";
 }
 
 class sme_mem_ld_ss_inst<bit Q, bits<2> msz, string mnemonic,
@@ -482,8 +483,8 @@ class sme_mem_ld_ss_inst<bit Q, bits<2> msz, string mnemonic,
                          Operand imm_ty, RegisterOperand gpr_ty>
     : sme_mem_ld_ss_base<
         Q, is_col, msz, (outs tile_ty:$ZAt),
-        (ins MatrixIndexGPR32Op12_15:$Rv, imm_ty:$imm, PPR3bAny:$Pg, GPR64sp:$Rn,
-             gpr_ty:$Rm),
+        (ins tile_ty:$_ZAt, MatrixIndexGPR32Op12_15:$Rv, imm_ty:$imm,
+             PPR3bAny:$Pg, GPR64sp:$Rn, gpr_ty:$Rm),
         mnemonic, "\t\\{$ZAt[$Rv, $imm]\\}, $Pg/z, [$Rn, $Rm]">;
 
 multiclass sme_mem_ss_aliases_base<string mnemonic, Instruction inst,
@@ -535,8 +536,28 @@ multiclass sme_mem_ld_ss_patterns<Instruction Inst, SDPatternOperator Load,
   let AddedComplexity = 1 in {
     def : Pat<(Load PPR3bAny:$pg, (addr GPR64sp:$base, GPR64:$offset),
                     tile_ty:$tile, (i32 (tileslice MatrixIndexGPR32Op12_15:$idx,
-                                              offset_ty:$imm))),
+                                                   offset_ty:$imm))),
               (Inst tile_ty:$tile, $idx, $imm, $pg, $base, $offset)>;
+  }
+}
+
+multiclass sme_x_mem_ld_ss_patterns<Instruction Inst, SDPatternOperator Load,
+                                    ValueType tile_ty, Operand offset_ty,
+                                    ComplexPattern addr,
+                                    ComplexPattern tileslice> {
+  // base, tileslice
+  def : Pat<(Load tile_ty:$tile, PPR3bAny:$pg, GPR64sp:$base,
+                  (i32 (tileslice MatrixIndexGPR32Op12_15:$idx,
+                                  offset_ty:$imm))),
+            (Inst $tile, $idx, $imm, $pg, $base, XZR)>;
+
+  // reg + reg, tileslice
+  let AddedComplexity = 1 in {
+    def : Pat<(Load tile_ty:$tile, PPR3bAny:$pg,
+                    (addr GPR64sp:$base, GPR64:$offset),
+                    (i32 (tileslice MatrixIndexGPR32Op12_15:$idx,
+                                    offset_ty:$imm))),
+              (Inst $tile, $idx, $imm, $pg, $base, $offset)>;
   }
 }
 
@@ -622,6 +643,33 @@ multiclass sme_mem_ld_v_ss<string mnemonic, bit is_col> {
                                             int_aarch64_sme_ld1q_horiz),
                                 timm32_0_15, sme_elm_idx0_0, am_sve_regreg_lsl4,
                                 tileslice128>;
+
+  // Patterns for intrinsics with real tile type.
+  defm : sme_x_mem_ld_ss_patterns<!cast<Instruction>(NAME # _B),
+                                  !if(is_col, int_aarch64_sme_x_ld1b_vert,
+                                              int_aarch64_sme_x_ld1b_horiz),
+                                  aarch64_za_b, timm32_0_15, am_sve_regreg_lsl0,
+                                  tileslice8>;
+  defm : sme_x_mem_ld_ss_patterns<!cast<Instruction>(NAME # _H),
+                                  !if(is_col, int_aarch64_sme_x_ld1h_vert,
+                                              int_aarch64_sme_x_ld1h_horiz),
+                                  aarch64_za_h, timm32_0_7, am_sve_regreg_lsl1,
+                                  tileslice16>;
+  defm : sme_x_mem_ld_ss_patterns<!cast<Instruction>(NAME # _S),
+                                  !if(is_col, int_aarch64_sme_x_ld1w_vert,
+                                              int_aarch64_sme_x_ld1w_horiz),
+                                  aarch64_za_s, timm32_0_3, am_sve_regreg_lsl2,
+                                  tileslice32>;
+  defm : sme_x_mem_ld_ss_patterns<!cast<Instruction>(NAME # _D),
+                                  !if(is_col, int_aarch64_sme_x_ld1d_vert,
+                                              int_aarch64_sme_x_ld1d_horiz),
+                                  aarch64_za_d, timm32_0_1, am_sve_regreg_lsl3,
+                                  tileslice64>;
+  defm : sme_x_mem_ld_ss_patterns<!cast<Instruction>(NAME # _Q),
+                                  !if(is_col, int_aarch64_sme_x_ld1q_vert,
+                                              int_aarch64_sme_x_ld1q_horiz),
+                                  aarch64_za_q, sme_elm_idx0_0,
+                                  am_sve_regreg_lsl4, tileslice128>;
 }
 
 multiclass sme_mem_ld_ss<string mnemonic> {
@@ -632,6 +680,15 @@ multiclass sme_mem_ld_ss<string mnemonic> {
 //===----------------------------------------------------------------------===//
 // SME Contiguous Stores
 //===----------------------------------------------------------------------===//
+
+class sme_store_pseudo
+    : Pseudo<(outs), (ins i32imm:$tile, MatrixIndexGPR32Op12_15:$idx,
+                          i32imm:$imm, PPR3bAny:$pg, GPR64sp:$base, GPR64:$offset), []>,
+      Sched<[]> {
+  // Translated to the actual instructions in AArch64ISelLowering.cpp
+  let usesCustomInserter = 1;
+  let mayStore = 1;
+}
 
 class sme_mem_st_ss_base<bit Q, bit V, bits<2> msz, dag ins,
                          string mnemonic, string argstr>
@@ -674,14 +731,33 @@ multiclass sme_mem_st_ss_patterns<Instruction Inst, SDPatternOperator Store,
                                   ComplexPattern addr,
                                   ComplexPattern tileslice> {
   // base, tileslice
-  def : Pat<(Store PPR3bAny:$pg, GPR64sp:$base, (imm2tile untyped:$tile),
+  def : Pat<(Store PPR3bAny:$pg, GPR64sp:$base, (imm2tile i32:$tile),
                    (i32 (tileslice MatrixIndexGPR32Op12_15:$idx, offset_ty:$imm))),
             (Inst $tile, $idx, $imm, $pg, $base, XZR)>;
 
   // reg + reg, tileslice
   let AddedComplexity = 1 in {
     def : Pat<(Store PPR3bAny:$pg, (addr GPR64sp:$base, GPR64:$offset),
-                     (imm2tile untyped:$tile),
+                     (imm2tile i32:$tile),
+                     (i32 (tileslice MatrixIndexGPR32Op12_15:$idx, offset_ty:$imm))),
+              (Inst $tile, $idx, $imm, $pg, $base, $offset)>;
+  }
+}
+
+multiclass sme_x_mem_st_ss_patterns<Instruction Inst, SDPatternOperator Store,
+                                    ValueType tile_ty,
+                                    Operand offset_ty,
+                                    ComplexPattern addr,
+                                    ComplexPattern tileslice> {
+  // base, tileslice
+  def : Pat<(Store PPR3bAny:$pg, GPR64sp:$base, tile_ty:$tile,
+                   (i32 (tileslice MatrixIndexGPR32Op12_15:$idx, offset_ty:$imm))),
+            (Inst $tile, $idx, $imm, $pg, $base, XZR)>;
+
+  // reg + reg, tileslice
+  let AddedComplexity = 1 in {
+    def : Pat<(Store PPR3bAny:$pg, (addr GPR64sp:$base, GPR64:$offset),
+                     tile_ty:$tile,
                      (i32 (tileslice MatrixIndexGPR32Op12_15:$idx, offset_ty:$imm))),
               (Inst $tile, $idx, $imm, $pg, $base, $offset)>;
   }
@@ -727,30 +803,65 @@ multiclass sme_mem_st_v_ss<string mnemonic, bit is_col> {
 
   defm : sme_mem_st_ss_aliases<NAME, is_col>;
 
-  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _B),
+  // Pseudo instructions for lowering intrinsics, using immediates instead of
+  // tile registers.
+  def _PSEUDO_B : sme_store_pseudo;
+  def _PSEUDO_H : sme_store_pseudo;
+  def _PSEUDO_S : sme_store_pseudo;
+  def _PSEUDO_D : sme_store_pseudo;
+  def _PSEUDO_Q : sme_store_pseudo;
+
+  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _PSEUDO_B),
                                 !if(is_col, int_aarch64_sme_st1b_vert,
                                             int_aarch64_sme_st1b_horiz),
                                 timm32_0_15, imm_to_tile8, am_sve_regreg_lsl0,
                                 tileslice8>;
-  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _H),
+  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _PSEUDO_H),
                                 !if(is_col, int_aarch64_sme_st1h_vert,
                                             int_aarch64_sme_st1h_horiz),
                                 timm32_0_7, imm_to_tile16, am_sve_regreg_lsl1,
                                 tileslice16>;
-  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _S),
+  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _PSEUDO_S),
                                 !if(is_col, int_aarch64_sme_st1w_vert,
                                             int_aarch64_sme_st1w_horiz),
                                 timm32_0_3, imm_to_tile32, am_sve_regreg_lsl2,
                                 tileslice32>;
-  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _D),
+  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _PSEUDO_D),
                                 !if(is_col, int_aarch64_sme_st1d_vert,
                                             int_aarch64_sme_st1d_horiz),
                                 timm32_0_1, imm_to_tile64, am_sve_regreg_lsl3,
                                 tileslice64>;
-  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_mem_st_ss_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                 !if(is_col, int_aarch64_sme_st1q_vert,
                                             int_aarch64_sme_st1q_horiz),
                                 sme_elm_idx0_0, imm_to_tile128,
+                                am_sve_regreg_lsl4, tileslice128>;
+
+  // Patterns for intrinsics with real tile type.
+  defm : sme_x_mem_st_ss_patterns<!cast<Instruction>(NAME # _B),
+                                !if(is_col, int_aarch64_sme_x_st1b_vert,
+                                            int_aarch64_sme_x_st1b_horiz),
+                                aarch64_za_b, timm32_0_15, am_sve_regreg_lsl0,
+                                tileslice8>;
+  defm : sme_x_mem_st_ss_patterns<!cast<Instruction>(NAME # _H),
+                                !if(is_col, int_aarch64_sme_x_st1h_vert,
+                                            int_aarch64_sme_x_st1h_horiz),
+                                aarch64_za_h, timm32_0_7, am_sve_regreg_lsl1,
+                                tileslice16>;
+  defm : sme_x_mem_st_ss_patterns<!cast<Instruction>(NAME # _S),
+                                !if(is_col, int_aarch64_sme_x_st1w_vert,
+                                            int_aarch64_sme_x_st1w_horiz),
+                                aarch64_za_s, timm32_0_3, am_sve_regreg_lsl2,
+                                tileslice32>;
+  defm : sme_x_mem_st_ss_patterns<!cast<Instruction>(NAME # _D),
+                                !if(is_col, int_aarch64_sme_x_st1d_vert,
+                                            int_aarch64_sme_x_st1d_horiz),
+                                aarch64_za_d, timm32_0_1, am_sve_regreg_lsl3,
+                                tileslice64>;
+  defm : sme_x_mem_st_ss_patterns<!cast<Instruction>(NAME # _Q),
+                                !if(is_col, int_aarch64_sme_x_st1q_vert,
+                                            int_aarch64_sme_x_st1q_horiz),
+                                aarch64_za_q, sme_elm_idx0_0,
                                 am_sve_regreg_lsl4, tileslice128>;
 }
 
@@ -872,6 +983,17 @@ multiclass sme_vector_to_tile_patterns<Instruction inst, ValueType zpr_vt,
             (inst imm_ty:$tile, $idx, $imm, $pg, $zn)>;
 }
 
+multiclass sme_x_vector_to_tile_patterns<Instruction inst, ValueType tile_ty,
+                                         ValueType zpr_vt, ValueType ppr_vt,
+                                         Operand offset_ty,
+                                         SDPatternOperator op,
+                                         ComplexPattern tileslice> {
+  def : Pat<(op tile_ty:$tile, (i32 (tileslice MatrixIndexGPR32Op12_15:$idx,
+                                               offset_ty:$imm)),
+                (ppr_vt PPR3bAny:$pg), (zpr_vt ZPRAny:$zn)),
+            (inst tile_ty:$tile, $idx, $imm, $pg, $zn)>;
+}
+
 class sme_mova_insert_pseudo<SMEMatrixTypeEnum za_flag>
     : Pseudo<(outs), (ins i32imm:$tile, MatrixIndexGPR32Op12_15:$idx,
                           i32imm:$imm, PPR3bAny:$pg, ZPRAny:$zn), []>,
@@ -982,6 +1104,34 @@ multiclass sme_vector_v_to_tile<string mnemonic, bit is_col> {
                                      nxv2f64, nxv2i1, sme_elm_idx0_7, sme_elm_idx0_1,
                                      op, tileslice64>;
 
+  defvar opx = !if(is_col, int_aarch64_sme_x_write_vert,
+                           int_aarch64_sme_x_write_horiz);
+
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _B),
+                                       aarch64_za_b, nxv16i8, nxv16i1, sme_elm_idx0_15,
+                                       opx, tileslice8>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _H),
+                                       aarch64_za_h, nxv8i16, nxv8i1, sme_elm_idx0_7,
+                                       opx, tileslice16>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _H),
+                                       aarch64_za_h, nxv8f16, nxv8i1, sme_elm_idx0_7,
+                                       opx, tileslice16>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _H),
+                                       aarch64_za_h, nxv8bf16, nxv8i1, sme_elm_idx0_7,
+                                       opx, tileslice16>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _S),
+                                       aarch64_za_s, nxv4i32, nxv4i1, sme_elm_idx0_3,
+                                       opx, tileslice32>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _S),
+                                       aarch64_za_s, nxv4f32, nxv4i1, sme_elm_idx0_3,
+                                       opx, tileslice32>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _D),
+                                       aarch64_za_d, nxv2i64, nxv2i1, sme_elm_idx0_1,
+                                       opx, tileslice64>;
+  defm : sme_x_vector_to_tile_patterns<!cast<Instruction>(NAME # _D),
+                                       aarch64_za_d, nxv2f64, nxv2i1, sme_elm_idx0_1,
+                                       opx, tileslice64>;
+
   defvar opq = !if(is_col, int_aarch64_sme_writeq_vert,
                            int_aarch64_sme_writeq_horiz);
 
@@ -1050,21 +1200,48 @@ multiclass sme_tile_to_vector_aliases<Instruction inst, ZPRRegOp zpr_ty,
                   (inst zpr_ty:$Zd, PPR3bAny:$Pg, tile_ty:$ZAn, MatrixIndexGPR32Op12_15:$Rv, imm_ty:$imm), 1>;
 }
 
-multiclass sme_tile_to_vector_patterns<Instruction inst, ValueType zpr_vt,
-                                       ValueType ppr_vt, Operand offset_ty,
+multiclass sme_tile_to_vector_patterns<Instruction inst,
+                                       ValueType zpr_vt, ValueType ppr_vt,
+                                       Operand offset_ty,
                                        ComplexPattern imm2tile,
                                        ComplexPattern tileslice,
                                        SDPatternOperator op> {
   def : Pat<(zpr_vt (op (zpr_vt ZPRAny:$passthru), (ppr_vt PPR3bAny:$pg),
-                        (imm2tile untyped:$tile), MatrixIndexGPR32Op12_15:$idx)),
+                        (imm2tile i32:$tile), MatrixIndexGPR32Op12_15:$idx)),
             (inst $passthru, $pg, $tile, $idx, 0)>;
   let AddedComplexity = 1 in {
     def : Pat<(zpr_vt (op (zpr_vt ZPRAny:$passthru), (ppr_vt PPR3bAny:$pg),
-                          (imm2tile untyped:$tile),
+                          (imm2tile i32:$tile),
                           (i32 (tileslice MatrixIndexGPR32Op12_15:$idx,
                                           offset_ty:$imm)))),
               (inst $passthru, $pg, $tile, $idx, $imm)>;
   }
+}
+
+multiclass sme_x_tile_to_vector_patterns<Instruction inst, ValueType tile_ty,
+                                         ValueType zpr_vt, ValueType ppr_vt,
+                                         Operand offset_ty,
+                                         ComplexPattern tileslice,
+                                         SDPatternOperator op> {
+  def : Pat<(zpr_vt (op (zpr_vt ZPRAny:$passthru), (ppr_vt PPR3bAny:$pg),
+                     tile_ty:$tile, MatrixIndexGPR32Op12_15:$idx)),
+            (inst $passthru, $pg, $tile, $idx, 0)>;
+  let AddedComplexity = 1 in {
+    def : Pat<(zpr_vt (op (zpr_vt ZPRAny:$passthru), (ppr_vt PPR3bAny:$pg),
+                          tile_ty:$tile,
+                          (i32 (tileslice MatrixIndexGPR32Op12_15:$idx,
+                                          offset_ty:$imm)))),
+              (inst $passthru, $pg, $tile, $idx, $imm)>;
+  }
+}
+
+class sme_mova_extract_pseudo
+    : Pseudo<(outs ZPRAny:$Zd), (ins ZPRAny:$_Zd, PPR3bAny:$pg, i32imm:$tile,
+                                     MatrixIndexGPR32Op12_15:$idx,
+                                     i32imm:$imm), []>,
+      Sched<[]> {
+  // Translated to the actual instructions in AArch64ISelLowering.cpp
+  let usesCustomInserter = 1;
 }
 
 multiclass sme_tile_to_vector_v<string mnemonic, bit is_col> {
@@ -1124,56 +1301,92 @@ multiclass sme_tile_to_vector_v<string mnemonic, bit is_col> {
   defvar op = !if(is_col, int_aarch64_sme_read_vert,
                           int_aarch64_sme_read_horiz);
 
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _B),
+  // Pseudo instructions for lowering intrinsics, using immediates instead of
+  // tile registers.
+  def _PSEUDO_B : sme_mova_extract_pseudo;
+  def _PSEUDO_H : sme_mova_extract_pseudo;
+  def _PSEUDO_S : sme_mova_extract_pseudo;
+  def _PSEUDO_D : sme_mova_extract_pseudo;
+  def _PSEUDO_Q : sme_mova_extract_pseudo;
+
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_B),
                                      nxv16i8, nxv16i1, sme_elm_idx0_15,
                                      imm_to_tile8, tileslice8, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _H),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_H),
                                      nxv8i16, nxv8i1, sme_elm_idx0_7,
                                      imm_to_tile16, tileslice16, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _H),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_H),
                                      nxv8f16, nxv8i1, sme_elm_idx0_7,
                                      imm_to_tile16, tileslice16, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _H),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_H),
                                      nxv8bf16, nxv8i1, sme_elm_idx0_7,
                                      imm_to_tile16, tileslice16, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _S),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_S),
                                      nxv4i32, nxv4i1, sme_elm_idx0_3,
                                      imm_to_tile32, tileslice32, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _S),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_S),
                                      nxv4f32, nxv4i1, sme_elm_idx0_3,
                                      imm_to_tile32, tileslice32, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _D),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_D),
                                      nxv2i64, nxv2i1, sme_elm_idx0_1,
                                      imm_to_tile64, tileslice64, op>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _D),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_D),
                                      nxv2f64, nxv2i1, sme_elm_idx0_1,
                                      imm_to_tile64, tileslice64, op>;
+
+  defvar opx = !if(is_col, int_aarch64_sme_x_read_vert,
+                           int_aarch64_sme_x_read_horiz);
+
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _B),
+                                       aarch64_za_b, nxv16i8, nxv16i1, sme_elm_idx0_15,
+                                       tileslice8, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _H),
+                                       aarch64_za_h, nxv8i16, nxv8i1, sme_elm_idx0_7,
+                                       tileslice16, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _H),
+                                       aarch64_za_h, nxv8f16, nxv8i1, sme_elm_idx0_7,
+                                       tileslice16, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _H),
+                                       aarch64_za_h, nxv8bf16, nxv8i1, sme_elm_idx0_7,
+                                       tileslice16, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _S),
+                                       aarch64_za_s, nxv4i32, nxv4i1, sme_elm_idx0_3,
+                                       tileslice32, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _S),
+                                       aarch64_za_s, nxv4f32, nxv4i1, sme_elm_idx0_3,
+                                       tileslice32, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _D),
+                                       aarch64_za_d, nxv2i64, nxv2i1, sme_elm_idx0_1,
+                                       tileslice64, opx>;
+  defm : sme_x_tile_to_vector_patterns<!cast<Instruction>(NAME # _D),
+                                       aarch64_za_d, nxv2f64, nxv2i1, sme_elm_idx0_1,
+                                       tileslice64, opx>;
 
   defvar opq = !if(is_col, int_aarch64_sme_readq_vert,
                            int_aarch64_sme_readq_horiz);
 
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv16i8, nxv16i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv8i16, nxv8i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv8f16, nxv8i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv8bf16, nxv8i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv4i32, nxv4i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv4f32, nxv4i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv2i64, nxv2i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
-  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _Q),
+  defm : sme_tile_to_vector_patterns<!cast<Instruction>(NAME # _PSEUDO_Q),
                                      nxv2f64, nxv2i1, sme_elm_idx0_0,
                                      imm_to_tile128, tileslice128, opq>;
 }

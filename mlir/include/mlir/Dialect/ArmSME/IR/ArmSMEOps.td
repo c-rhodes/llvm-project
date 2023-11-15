@@ -276,6 +276,40 @@ def GetTileID : ArmSME_Op<"get_tile_id"> {
   let assemblyFormat = "attr-dict `:` type($tile_id)";
 }
 
+def GetTile : ArmSME_Op<"get_tile", [Pure]> {
+  let summary = "Returns an SME \"virtual tile\"";
+  let description = [{
+    A `get_tile_id` operation returns a scalar integer representing an SME
+    "virtual tile" id. The bitwidth of the scalar indicates the element
+    bitwidth of the "virtual tile".
+
+    The scope of a tile id is a function and cannot be passed or returned from
+    functions.
+
+    Example:
+    ```mlir
+    // Allocate and return an 8-bit element "virtual tile" id
+    %za0_b = arm_sme.get_tile_id : i8
+    ```
+
+    Example:
+    ```
+    // Allocate and return two 16-bit element "virtual tile" ids
+    %za0_h = arm_sme.get_tile_id : i16
+    %za1_h = arm_sme.get_tile_id : i16
+    ```
+
+    Example:
+    ```
+    // Allocate and return an 128-bit element "virtual tile" id
+    %za0_q = arm_sme.get_tile_id : i128
+    ```
+  }];
+
+  let results = (outs SMETile:$tile);
+  let assemblyFormat = "attr-dict `:` type($tile)";
+}
+
 //
 // Tile reset.
 //

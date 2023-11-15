@@ -82,6 +82,11 @@ StringRef llvm::getEnumName(MVT::SimpleValueType T) {
   case MVT::x86mmx:   return "MVT::x86mmx";
   case MVT::x86amx:   return "MVT::x86amx";
   case MVT::aarch64svcount:   return "MVT::aarch64svcount";
+  case MVT::aarch64_za_b: return "MVT::aarch64_za_b";
+  case MVT::aarch64_za_h: return "MVT::aarch64_za_h";
+  case MVT::aarch64_za_s: return "MVT::aarch64_za_s";
+  case MVT::aarch64_za_d: return "MVT::aarch64_za_d";
+  case MVT::aarch64_za_q: return "MVT::aarch64_za_q";
   case MVT::i64x8:    return "MVT::i64x8";
   case MVT::Glue:     return "MVT::Glue";
   case MVT::isVoid:   return "MVT::isVoid";

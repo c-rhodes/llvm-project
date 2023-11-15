@@ -421,6 +421,12 @@ AArch64TargetLowering::AArch64TargetLowering(const TargetMachine &TM,
     }
   }
 
+  addRegisterClass(MVT::aarch64_za_b, &AArch64::MPR8RegClass);
+  addRegisterClass(MVT::aarch64_za_h, &AArch64::MPR16RegClass);
+  addRegisterClass(MVT::aarch64_za_s, &AArch64::MPR32RegClass);
+  addRegisterClass(MVT::aarch64_za_d, &AArch64::MPR64RegClass);
+  addRegisterClass(MVT::aarch64_za_q, &AArch64::MPR128RegClass);
+
   if (Subtarget->hasSVE2p1() || Subtarget->hasSME2()) {
     addRegisterClass(MVT::aarch64svcount, &AArch64::PPRRegClass);
     setOperationPromotedToType(ISD::LOAD, MVT::aarch64svcount, MVT::nxv16i1);
@@ -2726,6 +2732,7 @@ AArch64TargetLowering::EmitTileLoad(unsigned Opc, unsigned BaseReg,
   MachineInstrBuilder MIB = BuildMI(*BB, MI, MI.getDebugLoc(), TII->get(Opc));
 
   MIB.addReg(BaseReg + MI.getOperand(0).getImm(), RegState::Define);
+  MIB.addReg(BaseReg + MI.getOperand(0).getImm(), RegState::Undef);
   MIB.add(MI.getOperand(1)); // slice index register
   MIB.add(MI.getOperand(2)); // slice index offset
   MIB.add(MI.getOperand(3)); // pg
@@ -2733,6 +2740,32 @@ AArch64TargetLowering::EmitTileLoad(unsigned Opc, unsigned BaseReg,
   MIB.add(MI.getOperand(5)); // offset
 
   MI.eraseFromParent(); // The pseudo is gone now.
+  return BB;
+}
+
+MachineBasicBlock *
+AArch64TargetLowering::EmitTileStore(unsigned Opc, MachineInstr &MI,
+                                     MachineBasicBlock *BB) const {
+  const TargetInstrInfo *TII = Subtarget->getInstrInfo();
+  MachineInstrBuilder MIB = BuildMI(*BB, MI, MI.getDebugLoc(), TII->get(Opc));
+
+  MIB.addReg(MI.getOperand(0).getReg(), RegState::Undef);
+  for (unsigned I = 1; I < MI.getNumOperands(); ++I)
+    MIB.add(MI.getOperand(I));
+
+  MI.eraseFromParent(); // The pseudo is gone now.
+  return BB;
+}
+
+MachineBasicBlock *
+AArch64TargetLowering::EmitTileToVector(unsigned Opc, MachineInstr &MI,
+                                        MachineBasicBlock *BB) const {
+  const TargetInstrInfo *TII = Subtarget->getInstrInfo();
+  MI.setDesc(TII->get(Opc));
+  MI.tieOperands(0, 1);
+  MI.getOperand(3).ChangeToRegister(MI.getOperand(3).getReg(), /*isDef=*/false,
+                                    /*isImp=*/false, /*isKill=*/false,
+                                    /*isDead=*/false, /*isUndef=*/true);
   return BB;
 }
 
@@ -2762,7 +2795,7 @@ AArch64TargetLowering::EmitZAInstr(unsigned Opc, unsigned BaseReg,
 
   if (HasTile) {
     MIB.addReg(BaseReg + MI.getOperand(0).getImm(), RegState::Define);
-    MIB.addReg(BaseReg + MI.getOperand(0).getImm());
+    MIB.addReg(BaseReg + MI.getOperand(0).getImm(), RegState::Undef);
     StartIdx = 1;
   } else
     MIB.addReg(BaseReg, RegState::Define).addReg(BaseReg);
@@ -2866,6 +2899,46 @@ MachineBasicBlock *AArch64TargetLowering::EmitInstrWithCustomInserter(
     return EmitTileLoad(AArch64::LD1_MXIPXX_V_D, AArch64::ZAD0, MI, BB);
   case AArch64::LD1_MXIPXX_V_PSEUDO_Q:
     return EmitTileLoad(AArch64::LD1_MXIPXX_V_Q, AArch64::ZAQ0, MI, BB);
+  case AArch64::ST1_MXIPXX_H_PSEUDO_B:
+    return EmitTileStore(AArch64::ST1_MXIPXX_H_B, MI, BB);
+  case AArch64::ST1_MXIPXX_H_PSEUDO_H:
+    return EmitTileStore(AArch64::ST1_MXIPXX_H_H, MI, BB);
+  case AArch64::ST1_MXIPXX_H_PSEUDO_S:
+    return EmitTileStore(AArch64::ST1_MXIPXX_H_S, MI, BB);
+  case AArch64::ST1_MXIPXX_H_PSEUDO_D:
+    return EmitTileStore(AArch64::ST1_MXIPXX_H_D, MI, BB);
+  case AArch64::ST1_MXIPXX_H_PSEUDO_Q:
+    return EmitTileStore(AArch64::ST1_MXIPXX_H_Q, MI, BB);
+  case AArch64::ST1_MXIPXX_V_PSEUDO_B:
+    return EmitTileStore(AArch64::ST1_MXIPXX_V_B, MI, BB);
+  case AArch64::ST1_MXIPXX_V_PSEUDO_H:
+    return EmitTileStore(AArch64::ST1_MXIPXX_V_H, MI, BB);
+  case AArch64::ST1_MXIPXX_V_PSEUDO_S:
+    return EmitTileStore(AArch64::ST1_MXIPXX_V_S, MI, BB);
+  case AArch64::ST1_MXIPXX_V_PSEUDO_D:
+    return EmitTileStore(AArch64::ST1_MXIPXX_V_D, MI, BB);
+  case AArch64::ST1_MXIPXX_V_PSEUDO_Q:
+    return EmitTileStore(AArch64::ST1_MXIPXX_V_Q, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_H_PSEUDO_B:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_H_B, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_H_PSEUDO_H:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_H_H, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_H_PSEUDO_S:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_H_S, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_H_PSEUDO_D:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_H_D, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_H_PSEUDO_Q:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_H_Q, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_V_PSEUDO_B:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_V_B, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_V_PSEUDO_H:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_V_H, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_V_PSEUDO_S:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_V_S, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_V_PSEUDO_D:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_V_D, MI, BB);
+  case AArch64::EXTRACT_ZPMXI_V_PSEUDO_Q:
+    return EmitTileToVector(AArch64::EXTRACT_ZPMXI_V_Q, MI, BB);
   case AArch64::LDR_ZA_PSEUDO:
     return EmitFill(MI, BB);
   case AArch64::ZERO_M_PSEUDO:

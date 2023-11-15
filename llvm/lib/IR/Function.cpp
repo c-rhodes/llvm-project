@@ -1120,6 +1120,21 @@ static void DecodeIITType(unsigned &NextElt, ArrayRef<unsigned char> Infos,
   case IIT_AARCH64_SVCOUNT:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::AArch64Svcount, 0));
     return;
+  case IIT_AARCH64_ZA_B:
+    OutputTable.push_back(IITDescriptor::get(IITDescriptor::AArch64_ZA_B, 0));
+    return;
+  case IIT_AARCH64_ZA_H:
+    OutputTable.push_back(IITDescriptor::get(IITDescriptor::AArch64_ZA_H, 0));
+    return;
+  case IIT_AARCH64_ZA_S:
+    OutputTable.push_back(IITDescriptor::get(IITDescriptor::AArch64_ZA_S, 0));
+    return;
+  case IIT_AARCH64_ZA_D:
+    OutputTable.push_back(IITDescriptor::get(IITDescriptor::AArch64_ZA_D, 0));
+    return;
+  case IIT_AARCH64_ZA_Q:
+    OutputTable.push_back(IITDescriptor::get(IITDescriptor::AArch64_ZA_Q, 0));
+    return;
   case IIT_I8:
     OutputTable.push_back(IITDescriptor::get(IITDescriptor::Integer, 8));
     return;
@@ -1340,6 +1355,16 @@ static Type *DecodeFixedType(ArrayRef<Intrinsic::IITDescriptor> &Infos,
   case IITDescriptor::PPCQuad: return Type::getPPC_FP128Ty(Context);
   case IITDescriptor::AArch64Svcount:
     return TargetExtType::get(Context, "aarch64.svcount");
+  case IITDescriptor::AArch64_ZA_B:
+    return TargetExtType::get(Context, "aarch64.za.b");
+  case IITDescriptor::AArch64_ZA_H:
+    return TargetExtType::get(Context, "aarch64.za.h");
+  case IITDescriptor::AArch64_ZA_S:
+    return TargetExtType::get(Context, "aarch64.za.s");
+  case IITDescriptor::AArch64_ZA_D:
+    return TargetExtType::get(Context, "aarch64.za.d");
+  case IITDescriptor::AArch64_ZA_Q:
+    return TargetExtType::get(Context, "aarch64.za.q");
 
   case IITDescriptor::Integer:
     return IntegerType::get(Context, D.Integer_Width);
@@ -1501,6 +1526,21 @@ static bool matchIntrinsicType(
     case IITDescriptor::AArch64Svcount:
       return !isa<TargetExtType>(Ty) ||
              cast<TargetExtType>(Ty)->getName() != "aarch64.svcount";
+    case IITDescriptor::AArch64_ZA_B:
+      return !isa<TargetExtType>(Ty) ||
+             cast<TargetExtType>(Ty)->getName() != "aarch64.za.b";
+    case IITDescriptor::AArch64_ZA_H:
+      return !isa<TargetExtType>(Ty) ||
+             cast<TargetExtType>(Ty)->getName() != "aarch64.za.h";
+    case IITDescriptor::AArch64_ZA_S:
+      return !isa<TargetExtType>(Ty) ||
+             cast<TargetExtType>(Ty)->getName() != "aarch64.za.s";
+    case IITDescriptor::AArch64_ZA_D:
+      return !isa<TargetExtType>(Ty) ||
+             cast<TargetExtType>(Ty)->getName() != "aarch64.za.d";
+    case IITDescriptor::AArch64_ZA_Q:
+      return !isa<TargetExtType>(Ty) ||
+             cast<TargetExtType>(Ty)->getName() != "aarch64.za.q";
     case IITDescriptor::Vector: {
       VectorType *VT = dyn_cast<VectorType>(Ty);
       return !VT || VT->getElementCount() != D.Vector_Width ||

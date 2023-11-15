@@ -716,6 +716,11 @@ LLVMScalableVectorType::verify(function_ref<InFlightDiagnostic()> emitError,
 
 static constexpr llvm::StringRef kSpirvPrefix = "spirv.";
 static constexpr llvm::StringRef kArmSVCount = "aarch64.svcount";
+static constexpr llvm::StringRef kAArch64_ZA_B = "aarch64.za.b";
+static constexpr llvm::StringRef kAArch64_ZA_H = "aarch64.za.h";
+static constexpr llvm::StringRef kAArch64_ZA_S = "aarch64.za.s";
+static constexpr llvm::StringRef kAArch64_ZA_D = "aarch64.za.d";
+static constexpr llvm::StringRef kAArch64_ZA_Q = "aarch64.za.q";
 
 bool LLVM::LLVMTargetExtType::hasProperty(Property prop) const {
   // See llvm/lib/IR/Type.cpp for reference.
@@ -733,7 +738,9 @@ bool LLVM::LLVMTargetExtType::supportsMemOps() const {
   if (getExtTypeName().starts_with(kSpirvPrefix))
     return true;
 
-  if (getExtTypeName() == kArmSVCount)
+  if (getExtTypeName() == kArmSVCount || getExtTypeName() == kAArch64_ZA_B ||
+      getExtTypeName() == kAArch64_ZA_H || getExtTypeName() == kAArch64_ZA_S ||
+      getExtTypeName() == kAArch64_ZA_D || getExtTypeName() == kAArch64_ZA_Q)
     return true;
 
   return false;

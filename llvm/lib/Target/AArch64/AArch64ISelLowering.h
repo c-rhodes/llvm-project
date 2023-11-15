@@ -612,6 +612,10 @@ public:
   MachineBasicBlock *EmitTileLoad(unsigned Opc, unsigned BaseReg,
                                   MachineInstr &MI,
                                   MachineBasicBlock *BB) const;
+  MachineBasicBlock *EmitTileStore(unsigned Opc, MachineInstr &MI,
+                                   MachineBasicBlock *BB) const;
+  MachineBasicBlock *EmitTileToVector(unsigned Opc, MachineInstr &MI,
+                                      MachineBasicBlock *BB) const;
   MachineBasicBlock *EmitFill(MachineInstr &MI, MachineBasicBlock *BB) const;
   MachineBasicBlock *EmitZAInstr(unsigned Opc, unsigned BaseReg,
                                  MachineInstr &MI, MachineBasicBlock *BB,

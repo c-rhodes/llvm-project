@@ -326,10 +326,11 @@ public:
     return false;
   }
 
-  template <unsigned BaseReg> bool ImmToTile(SDValue N, SDValue &Imm) {
+  template <unsigned BaseReg, MVT::SimpleValueType TileMVT>
+  bool ImmToTile(SDValue N, SDValue &Imm) {
     if (auto *CI = dyn_cast<ConstantSDNode>(N)) {
       uint64_t C = CI->getZExtValue();
-      Imm = CurDAG->getRegister(BaseReg + C, MVT::Other);
+      Imm = CurDAG->getRegister(BaseReg + C, TileMVT);
       return true;
     }
     return false;

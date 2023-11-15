@@ -108,6 +108,15 @@ let Predicates = [HasSME] in {
 defm LD1_MXIPXX : sme_mem_ld_ss<"ld1">;
 defm ST1_MXIPXX : sme_mem_st_ss<"st1">;
 
+let mayStore = 1 in {
+def SpillZAPseudo :
+  Pseudo<(outs), (ins TileVectorOpH16:$tile, GPR64:$num_tile_slices, MatrixIndexGPR32Op12_15:$Rv, PPR3bAny:$Pg, GPR64sp:$Rn, GPR64:$Rm), []>, Sched<[]>;
+}
+let mayLoad = 1 in {
+def FillZAPseudo :
+  Pseudo<(outs TileVectorOpH16:$tile), (ins GPR64:$num_tile_slices, MatrixIndexGPR32Op12_15:$Rv, PPR3bAny:$Pg, GPR64sp:$Rn, GPR64:$Rm), []>, Sched<[]>;
+}
+
 //===----------------------------------------------------------------------===//
 // Spill + fill
 //===----------------------------------------------------------------------===//

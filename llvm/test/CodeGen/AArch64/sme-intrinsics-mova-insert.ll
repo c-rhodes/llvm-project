@@ -72,6 +72,76 @@ define void @insert_col_b(i32 %tileslice, <vscale x 16 x i1> %pg,
   ret void
 }
 
+define void @x_insert_row_b(i32 %tileslice, <vscale x 16 x i1> %pg,
+; CHECK-LABEL: x_insert_row_b:
+; CHECK:       // %bb.0:
+; CHECK-NEXT:    mov w12, w0
+; CHECK-NEXT:    mov za0h.b[w12, 0], p0/m, z0.b
+; CHECK-NEXT:    mov za0h.b[w12, 2], p0/m, z1.b
+; CHECK-NEXT:    mov za0h.b[w12, 4], p0/m, z2.b
+; CHECK-NEXT:    mov za0h.b[w12, 6], p0/m, z3.b
+; CHECK-NEXT:    mov za0h.b[w12, 8], p0/m, z4.b
+; CHECK-NEXT:    mov za0h.b[w12, 10], p0/m, z5.b
+; CHECK-NEXT:    mov za0h.b[w12, 12], p0/m, z6.b
+; CHECK-NEXT:    mov za0h.b[w12, 14], p0/m, z7.b
+; CHECK-NEXT:    ret
+                          <vscale x 16 x i8> %z0, <vscale x 16 x i8> %z1,
+                          <vscale x 16 x i8> %z2, <vscale x 16 x i8> %z3,
+                          <vscale x 16 x i8> %z4, <vscale x 16 x i8> %z5,
+                          <vscale x 16 x i8> %z6, <vscale x 16 x i8> %z7) {
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z0)
+  %tileslice.2 = add i32 %tileslice, 2
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.2, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z1)
+  %tileslice.4 = add i32 %tileslice, 4
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.4, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z2)
+  %tileslice.6 = add i32 %tileslice, 6
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.6, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z3)
+  %tileslice.8 = add i32 %tileslice, 8
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.8, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z4)
+  %tileslice.10 = add i32 %tileslice, 10
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.10, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z5)
+  %tileslice.12 = add i32 %tileslice, 12
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.12, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z6)
+  %tileslice.14 = add i32 %tileslice, 14
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.14, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z7)
+  ret void
+}
+
+define void @x_insert_col_b(i32 %tileslice, <vscale x 16 x i1> %pg,
+; CHECK-LABEL: x_insert_col_b:
+; CHECK:       // %bb.0:
+; CHECK-NEXT:    mov w12, w0
+; CHECK-NEXT:    mov za0v.b[w12, 0], p0/m, z0.b
+; CHECK-NEXT:    mov za0v.b[w12, 2], p0/m, z1.b
+; CHECK-NEXT:    mov za0v.b[w12, 4], p0/m, z2.b
+; CHECK-NEXT:    mov za0v.b[w12, 6], p0/m, z3.b
+; CHECK-NEXT:    mov za0v.b[w12, 8], p0/m, z4.b
+; CHECK-NEXT:    mov za0v.b[w12, 10], p0/m, z5.b
+; CHECK-NEXT:    mov za0v.b[w12, 12], p0/m, z6.b
+; CHECK-NEXT:    mov za0v.b[w12, 14], p0/m, z7.b
+; CHECK-NEXT:    ret
+                          <vscale x 16 x i8> %z0, <vscale x 16 x i8> %z1,
+                          <vscale x 16 x i8> %z2, <vscale x 16 x i8> %z3,
+                          <vscale x 16 x i8> %z4, <vscale x 16 x i8> %z5,
+                          <vscale x 16 x i8> %z6, <vscale x 16 x i8> %z7) {
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z0)
+  %tileslice.2 = add i32 %tileslice, 2
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.2, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z1)
+  %tileslice.4 = add i32 %tileslice, 4
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.4, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z2)
+  %tileslice.6 = add i32 %tileslice, 6
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.6, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z3)
+  %tileslice.8 = add i32 %tileslice, 8
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.8, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z4)
+  %tileslice.10 = add i32 %tileslice, 10
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.10, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z5)
+  %tileslice.12 = add i32 %tileslice, 12
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.12, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z6)
+  %tileslice.14 = add i32 %tileslice, 14
+  call target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b") undef, i32 %tileslice.14, <vscale x 16 x i1> %pg, <vscale x 16 x i8> %z7)
+  ret void
+}
+
 define void @insert_row_h(i32 %tileslice, <vscale x 8 x i1> %pg,
 ; CHECK-LABEL: insert_row_h:
 ; CHECK:       // %bb.0:
@@ -443,13 +513,13 @@ define void @test_sink_offset_operand(<vscale x 4 x i1> %pg, i32 %base, i32 %N) 
 ; CHECK:       // %bb.0: // %entry
 ; CHECK-NEXT:    mov z0.s, #0 // =0x0
 ; CHECK-NEXT:    mov w12, w0
-; CHECK-NEXT:  .LBB28_1: // %for.body
+; CHECK-NEXT:  .LBB30_1: // %for.body
 ; CHECK-NEXT:    // =>This Inner Loop Header: Depth=1
 ; CHECK-NEXT:    mov za0h.s[w12, 0], p0/m, z0.s
 ; CHECK-NEXT:    subs w1, w1, #3
 ; CHECK-NEXT:    mov za0h.s[w12, 1], p0/m, z0.s
 ; CHECK-NEXT:    mov za0h.s[w12, 2], p0/m, z0.s
-; CHECK-NEXT:    b.ne .LBB28_1
+; CHECK-NEXT:    b.ne .LBB30_1
 ; CHECK-NEXT:  // %bb.2: // %exit
 ; CHECK-NEXT:    ret
 entry:
@@ -486,6 +556,9 @@ declare void @llvm.aarch64.sme.write.vert.nxv4i32(i32, i32, <vscale x 4 x i1>, <
 declare void @llvm.aarch64.sme.write.vert.nxv4f32(i32, i32, <vscale x 4 x i1>, <vscale x 4 x float>)
 declare void @llvm.aarch64.sme.write.vert.nxv2i64(i32, i32, <vscale x 2 x i1>, <vscale x 2 x i64>)
 declare void @llvm.aarch64.sme.write.vert.nxv2f64(i32, i32, <vscale x 2 x i1>, <vscale x 2 x double>)
+
+declare target("aarch64.za.b") @llvm.aarch64.sme.x.write.horiz.nxv16i8(target("aarch64.za.b"), i32, <vscale x 16 x i1>, <vscale x 16 x i8>)
+declare target("aarch64.za.b") @llvm.aarch64.sme.x.write.vert.nxv16i8(target("aarch64.za.b"), i32, <vscale x 16 x i1>, <vscale x 16 x i8>)
 
 declare void @llvm.aarch64.sme.writeq.horiz.nxv16i8(i32, i32, <vscale x 16 x i1>, <vscale x 16 x i8>)
 declare void @llvm.aarch64.sme.writeq.horiz.nxv8i16(i32, i32, <vscale x 8 x i1>, <vscale x 8 x i16>)

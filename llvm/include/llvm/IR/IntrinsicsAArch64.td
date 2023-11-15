@@ -2763,6 +2763,60 @@ let TargetPrefix = "aarch64" in {
   def int_aarch64_sme_st1d_vert  : SME_Load_Store_Intrinsic<llvm_nxv2i1_ty>;
   def int_aarch64_sme_st1q_vert  : SME_Load_Store_Intrinsic<llvm_nxv1i1_ty>;
 
+  class SME_Load_Intrinsic<LLVMType tile_ty, LLVMType pred_ty>
+    : DefaultAttrsIntrinsic<[tile_ty], [tile_ty, pred_ty, llvm_ptr_ty, llvm_i32_ty]>;
+  class SME_Store_Intrinsic<LLVMType tile_ty, LLVMType pred_ty>
+    : DefaultAttrsIntrinsic<[], [pred_ty, llvm_ptr_ty, tile_ty, llvm_i32_ty]>;
+
+  // Load intrinsics that return result of tile type.
+  //
+  // TODO: int_aarch64_sme_x is a temporary prefix for the alternative set of
+  // SME intrinsics where the tile has a proper type and dataflow is modelled,
+  // in contrast to the original intrinsics that pass the tile ID (i32) as
+  // input.
+  def int_aarch64_sme_x_ld1b_horiz
+    : SME_Load_Intrinsic<llvm_aarch64_za_b_ty, llvm_nxv16i1_ty>;
+  def int_aarch64_sme_x_ld1h_horiz
+    : SME_Load_Intrinsic<llvm_aarch64_za_h_ty, llvm_nxv8i1_ty>;
+  def int_aarch64_sme_x_ld1w_horiz
+    : SME_Load_Intrinsic<llvm_aarch64_za_s_ty, llvm_nxv4i1_ty>;
+  def int_aarch64_sme_x_ld1d_horiz
+    : SME_Load_Intrinsic<llvm_aarch64_za_d_ty, llvm_nxv2i1_ty>;
+  def int_aarch64_sme_x_ld1q_horiz
+    : SME_Load_Intrinsic<llvm_aarch64_za_q_ty, llvm_nxv1i1_ty>;
+  def int_aarch64_sme_x_ld1b_vert
+    : SME_Load_Intrinsic<llvm_aarch64_za_b_ty, llvm_nxv16i1_ty>;
+  def int_aarch64_sme_x_ld1h_vert
+    : SME_Load_Intrinsic<llvm_aarch64_za_h_ty, llvm_nxv8i1_ty>;
+  def int_aarch64_sme_x_ld1w_vert
+    : SME_Load_Intrinsic<llvm_aarch64_za_s_ty, llvm_nxv4i1_ty>;
+  def int_aarch64_sme_x_ld1d_vert
+    : SME_Load_Intrinsic<llvm_aarch64_za_d_ty, llvm_nxv2i1_ty>;
+  def int_aarch64_sme_x_ld1q_vert
+    : SME_Load_Intrinsic<llvm_aarch64_za_q_ty, llvm_nxv1i1_ty>;
+
+  // Store intrinsics that store value of tile type.
+  def int_aarch64_sme_x_st1b_horiz
+    : SME_Store_Intrinsic<llvm_aarch64_za_b_ty, llvm_nxv16i1_ty>;
+  def int_aarch64_sme_x_st1h_horiz
+    : SME_Store_Intrinsic<llvm_aarch64_za_h_ty, llvm_nxv8i1_ty>;
+  def int_aarch64_sme_x_st1w_horiz
+    : SME_Store_Intrinsic<llvm_aarch64_za_s_ty, llvm_nxv4i1_ty>;
+  def int_aarch64_sme_x_st1d_horiz
+    : SME_Store_Intrinsic<llvm_aarch64_za_d_ty, llvm_nxv2i1_ty>;
+  def int_aarch64_sme_x_st1q_horiz
+    : SME_Store_Intrinsic<llvm_aarch64_za_q_ty, llvm_nxv1i1_ty>;
+  def int_aarch64_sme_x_st1b_vert
+    : SME_Store_Intrinsic<llvm_aarch64_za_b_ty, llvm_nxv16i1_ty>;
+  def int_aarch64_sme_x_st1h_vert
+    : SME_Store_Intrinsic<llvm_aarch64_za_h_ty, llvm_nxv8i1_ty>;
+  def int_aarch64_sme_x_st1w_vert
+    : SME_Store_Intrinsic<llvm_aarch64_za_s_ty, llvm_nxv4i1_ty>;
+  def int_aarch64_sme_x_st1d_vert
+    : SME_Store_Intrinsic<llvm_aarch64_za_d_ty, llvm_nxv2i1_ty>;
+  def int_aarch64_sme_x_st1q_vert
+    : SME_Store_Intrinsic<llvm_aarch64_za_q_ty, llvm_nxv1i1_ty>;
+
   // Spill + fill
   class SME_LDR_STR_ZA_Intrinsic
     : DefaultAttrsIntrinsic<[], [llvm_i32_ty, llvm_ptr_ty, llvm_i32_ty]>;
@@ -2787,6 +2841,22 @@ let TargetPrefix = "aarch64" in {
   def int_aarch64_sme_readq_vert   : SME_TileToVector_Intrinsic;
   def int_aarch64_sme_writeq_horiz : SME_VectorToTile_Intrinsic;
   def int_aarch64_sme_writeq_vert  : SME_VectorToTile_Intrinsic;
+
+  // Tile <-> vector intrinsics with real tile type.
+  // TODO: Use tile_ty instead of llvm_any_ty.
+  class SME_X_TileToVector_Intrinsic
+      : DefaultAttrsIntrinsic<[llvm_anyvector_ty],
+          [LLVMMatchType<0>, LLVMScalarOrSameVectorWidth<0, llvm_i1_ty>,
+           llvm_any_ty, llvm_i32_ty]>;
+  class SME_X_VectorToTile_Intrinsic
+      : DefaultAttrsIntrinsic<[llvm_any_ty],
+          [LLVMMatchType<0>, llvm_i32_ty, LLVMScalarOrSameVectorWidth<1, llvm_i1_ty>,
+           llvm_anyvector_ty]>;
+
+  def int_aarch64_sme_x_read_horiz  : SME_X_TileToVector_Intrinsic;
+  def int_aarch64_sme_x_read_vert   : SME_X_TileToVector_Intrinsic;
+  def int_aarch64_sme_x_write_horiz : SME_X_VectorToTile_Intrinsic;
+  def int_aarch64_sme_x_write_vert  : SME_X_VectorToTile_Intrinsic;
 
   def int_aarch64_sme_zero : DefaultAttrsIntrinsic<[], [llvm_i32_ty], [ImmArg<ArgIndex<0>>]>;
 

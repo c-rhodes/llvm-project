@@ -9,6 +9,7 @@
 #include "mlir/Conversion/LLVMCommon/TypeConverter.h"
 #include "MemRefDescriptor.h"
 #include "mlir/Conversion/LLVMCommon/MemRefBuilder.h"
+#include "mlir/Dialect/ArmSME/Utils/Utils.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "llvm/ADT/ScopeExit.h"
@@ -62,6 +63,25 @@ LLVMTypeConverter::LLVMTypeConverter(MLIRContext *ctx,
   addConversion(
       [&](UnrankedMemRefType type) { return convertUnrankedMemRefType(type); });
   addConversion([&](VectorType type) -> std::optional<Type> {
+    if (arm_sme::isValidSMETileVectorType(type)) {
+      auto elemType = type.getElementType();
+      if (elemType.isInteger(8))
+        return LLVM::LLVMTargetExtType::get(type.getContext(), "aarch64.za.b",
+                                            std::nullopt, std::nullopt);
+      else if (elemType.isInteger(16) || elemType.isF16() || elemType.isBF16())
+        return LLVM::LLVMTargetExtType::get(type.getContext(), "aarch64.za.h",
+                                            std::nullopt, std::nullopt);
+      else if (elemType.isInteger(32) || elemType.isF32())
+        return LLVM::LLVMTargetExtType::get(type.getContext(), "aarch64.za.s",
+                                            std::nullopt, std::nullopt);
+      else if (elemType.isInteger(64) || elemType.isF64())
+        return LLVM::LLVMTargetExtType::get(type.getContext(), "aarch64.za.d",
+                                            std::nullopt, std::nullopt);
+      else if (elemType.isInteger(128) || elemType.isF128())
+        return LLVM::LLVMTargetExtType::get(type.getContext(), "aarch64.za.q",
+                                            std::nullopt, std::nullopt);
+      llvm_unreachable("unexpected type!");
+    }
     FailureOr<Type> llvmType = convertVectorType(type);
     if (failed(llvmType))
       return std::nullopt;

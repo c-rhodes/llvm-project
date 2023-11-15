@@ -319,6 +319,11 @@ def IIT_FUNCREF : IIT_VT<funcref, 55>;
 def IIT_I2 : IIT_Int<2, 57>;
 def IIT_I4 : IIT_Int<4, 58>;
 def IIT_AARCH64_SVCOUNT : IIT_VT<aarch64svcount, 59>;
+def IIT_AARCH64_ZA_B : IIT_VT<aarch64_za_b, 60>;
+def IIT_AARCH64_ZA_H : IIT_VT<aarch64_za_h, 61>;
+def IIT_AARCH64_ZA_S : IIT_VT<aarch64_za_s, 62>;
+def IIT_AARCH64_ZA_D : IIT_VT<aarch64_za_d, 63>;
+def IIT_AARCH64_ZA_Q : IIT_VT<aarch64_za_q, 64>;
 }
 
 defvar IIT_all_FixedTypes = !filter(iit, IIT_all,
@@ -497,6 +502,11 @@ def llvm_token_ty      : LLVMType<token>;        // token
 def llvm_x86mmx_ty     : LLVMType<x86mmx>;
 
 def llvm_aarch64_svcount_ty : LLVMType<aarch64svcount>;
+def llvm_aarch64_za_b_ty : LLVMType<aarch64_za_b>;
+def llvm_aarch64_za_h_ty : LLVMType<aarch64_za_h>;
+def llvm_aarch64_za_s_ty : LLVMType<aarch64_za_s>;
+def llvm_aarch64_za_d_ty : LLVMType<aarch64_za_d>;
+def llvm_aarch64_za_q_ty : LLVMType<aarch64_za_q>;
 
 def llvm_x86amx_ty     : LLVMType<x86amx>;
 
