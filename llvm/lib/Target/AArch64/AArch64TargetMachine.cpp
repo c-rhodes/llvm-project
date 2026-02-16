@@ -399,7 +399,9 @@ AArch64TargetMachine::AArch64TargetMachine(const Target &T, const Triple &TT,
   // MachO/CodeModel::Large, which GlobalISel does not support.
   if (TargetSupportsGISel &&
       (static_cast<int>(getOptLevel()) <= EnableGlobalISelAtO ||
-       (!GlobalISelFlag && !Options.EnableGlobalISel))) {
+       (!GlobalISelFlag && !Options.EnableGlobalISel &&
+        !(static_cast<int>(getOptLevel()) == 0 &&
+          EnableGlobalISelAtO == -1)))) {
     setGlobalISel(true);
     setGlobalISelAbort(GlobalISelAbortMode::Disable);
   }
