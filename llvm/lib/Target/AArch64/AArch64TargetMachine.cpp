@@ -158,7 +158,7 @@ static cl::opt<bool>
 static cl::opt<int> EnableGlobalISelAtO(
     "aarch64-enable-global-isel-at-O", cl::Hidden,
     cl::desc("Enable GlobalISel at or below an opt level (-1 to disable)"),
-    cl::init(0));
+    cl::init(-1));
 
 static cl::opt<bool>
     EnableSVEIntrinsicOpts("aarch64-enable-sve-intrinsic-opts", cl::Hidden,
@@ -399,7 +399,9 @@ AArch64TargetMachine::AArch64TargetMachine(const Target &T, const Triple &TT,
   // MachO/CodeModel::Large, which GlobalISel does not support.
   if (TargetSupportsGISel &&
       (static_cast<int>(getOptLevel()) <= EnableGlobalISelAtO ||
-       (!GlobalISelFlag && !Options.EnableGlobalISel))) {
+       (!GlobalISelFlag && !Options.EnableGlobalISel &&
+        !(static_cast<int>(getOptLevel()) == 0 &&
+          EnableGlobalISelAtO == -1)))) {
     setGlobalISel(true);
     setGlobalISelAbort(GlobalISelAbortMode::Disable);
   }
