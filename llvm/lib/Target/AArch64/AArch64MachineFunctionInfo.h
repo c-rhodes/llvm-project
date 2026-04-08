@@ -16,6 +16,7 @@
 #include "AArch64SMEAttributes.h"
 #include "AArch64Subtarget.h"
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/CodeGen/CallingConvLower.h"
@@ -158,6 +159,10 @@ class AArch64FunctionInfo final : public MachineFunctionInfo {
   /// Initialized during frame lowering, unless the function has the noredzone
   /// attribute, in which case it is set to false at construction.
   std::optional<bool> HasRedZone;
+
+  /// Cache of strictly reserved registers for this function (populated on first
+  /// query to getStrictlyReservedRegs).
+  mutable std::optional<BitVector> StrictlyReservedRegs;
 
   /// ForwardedMustTailRegParms - A list of virtual and physical registers
   /// that must be forwarded to every musttail call.
@@ -465,6 +470,13 @@ public:
 
   std::optional<bool> hasRedZone() const { return HasRedZone; }
   void setHasRedZone(bool s) { HasRedZone = s; }
+
+  const std::optional<BitVector> &getStrictlyReservedRegs() const {
+    return StrictlyReservedRegs;
+  }
+  void setStrictlyReservedRegs(BitVector BV) const {
+    StrictlyReservedRegs = std::move(BV);
+  }
 
   int getVarArgsStackIndex() const { return VarArgsStackIndex; }
   void setVarArgsStackIndex(int Index) { VarArgsStackIndex = Index; }

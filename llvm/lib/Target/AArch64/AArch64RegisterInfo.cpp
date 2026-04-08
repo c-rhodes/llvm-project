@@ -417,9 +417,18 @@ AArch64RegisterInfo::explainReservedReg(const MachineFunction &MF,
 
 BitVector
 AArch64RegisterInfo::getStrictlyReservedRegs(const MachineFunction &MF) const {
+  auto *AFI = MF.getInfo<AArch64FunctionInfo>();
+  const MachineRegisterInfo &MRI = MF.getRegInfo();
+  // Only reuse the cached reserved set once the MRI has been frozen. Before
+  // that point the reserved set can still change as frame/layout decisions are
+  // made.
+  if (MRI.reservedRegsFrozen()) {
+    if (const auto &Cached = AFI->getStrictlyReservedRegs())
+      return *Cached;
+  }
+
   const AArch64FrameLowering *TFI = getFrameLowering(MF);
 
-  // FIXME: avoid re-calculating this every time.
   BitVector Reserved(getNumRegs());
   markSuperRegs(Reserved, AArch64::WSP);
   markSuperRegs(Reserved, AArch64::WZR);
@@ -517,6 +526,8 @@ AArch64RegisterInfo::getStrictlyReservedRegs(const MachineFunction &MF) const {
                 "Unexpected order of registers");
   Reserved.set(AArch64::Q0_HI, AArch64::Q31_HI);
 
+  if (MRI.reservedRegsFrozen())
+    AFI->setStrictlyReservedRegs(Reserved);
   return Reserved;
 }
 
