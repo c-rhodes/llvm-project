@@ -28,8 +28,11 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/Printable.h"
+#include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 
 namespace llvm {
 
@@ -270,6 +273,11 @@ private:
   const RegClassInfo *const RCInfos;
   const MVT::SimpleValueType *const RCVTLists;
   unsigned HwMode;
+  mutable std::unique_ptr<std::atomic<const TargetRegisterClass *>[]>
+      MinimalPhysRegClassCache;
+  mutable std::once_flag MinimalPhysRegClassCacheInitFlag;
+
+  void initMinimalPhysRegClassCache() const;
 
 protected:
   TargetRegisterInfo(const TargetRegisterInfoDesc *ID,

@@ -1969,7 +1969,7 @@ private:
 
       int NumBits = 0;
 
-      auto TRI = TII->getRegisterInfo();
+      const auto &TRI = TII->getRegisterInfo();
       auto &MRI = MI->getMF()->getRegInfo();
       for (auto &Elt : Collection) {
         auto Op = Elt->getInstr()->getOperand(0);

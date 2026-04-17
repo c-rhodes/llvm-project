@@ -67,6 +67,13 @@ TargetRegisterInfo::TargetRegisterInfo(
 
 TargetRegisterInfo::~TargetRegisterInfo() = default;
 
+void TargetRegisterInfo::initMinimalPhysRegClassCache() const {
+  std::call_once(MinimalPhysRegClassCacheInitFlag, [this] {
+    MinimalPhysRegClassCache =
+        std::make_unique<std::atomic<const TargetRegisterClass *>[]>(getNumRegs());
+  });
+}
+
 bool TargetRegisterInfo::shouldRegionSplitForVirtReg(
     const MachineFunction &MF, const LiveInterval &VirtReg) const {
   const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
@@ -263,7 +270,17 @@ getCommonMinimalPhysRegClass(const TargetRegisterInfo *TRI, MCRegister Reg1,
 
 const TargetRegisterClass *
 TargetRegisterInfo::getMinimalPhysRegClass(MCRegister Reg, MVT VT) const {
-  return ::getMinimalPhysRegClass(this, Reg, VT);
+  if (VT == MVT::Other) {
+    initMinimalPhysRegClassCache();
+    if (const TargetRegisterClass *Cached =
+            MinimalPhysRegClassCache[Reg.id()].load(std::memory_order_relaxed))
+      return Cached;
+  }
+
+  const TargetRegisterClass *RC = ::getMinimalPhysRegClass(this, Reg, VT);
+  if (VT == MVT::Other)
+    MinimalPhysRegClassCache[Reg.id()].store(RC, std::memory_order_relaxed);
+  return RC;
 }
 
 const TargetRegisterClass *TargetRegisterInfo::getCommonMinimalPhysRegClass(
