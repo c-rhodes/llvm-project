@@ -665,8 +665,8 @@ define hidden void @multidim() {
 ; CHECK-CPA-O0-NEXT:    add w9, w9, #1
 ; CHECK-CPA-O0-NEXT:    ldrb w8, [x8, w9, sxtw]
 ; CHECK-CPA-O0-NEXT:    uxtb w8, w8
-; CHECK-CPA-O0-NEXT:    cbz w8, .LBB14_2
-; CHECK-CPA-O0-NEXT:    b .LBB14_1
+; CHECK-CPA-O0-NEXT:    cbnz w8, .LBB14_1
+; CHECK-CPA-O0-NEXT:    b .LBB14_2
 ; CHECK-CPA-O0-NEXT:  .LBB14_1:
 ; CHECK-CPA-O0-NEXT:    ldr x0, [sp, #8] // 8-byte Reload
 ; CHECK-CPA-O0-NEXT:    bl printf
@@ -718,8 +718,8 @@ define hidden void @multidim() {
 ; CHECK-NOCPA-O0-NEXT:    add w9, w9, #1
 ; CHECK-NOCPA-O0-NEXT:    ldrb w8, [x8, w9, sxtw]
 ; CHECK-NOCPA-O0-NEXT:    uxtb w8, w8
-; CHECK-NOCPA-O0-NEXT:    cbz w8, .LBB14_2
-; CHECK-NOCPA-O0-NEXT:    b .LBB14_1
+; CHECK-NOCPA-O0-NEXT:    cbnz w8, .LBB14_1
+; CHECK-NOCPA-O0-NEXT:    b .LBB14_2
 ; CHECK-NOCPA-O0-NEXT:  .LBB14_1:
 ; CHECK-NOCPA-O0-NEXT:    ldr x0, [sp, #8] // 8-byte Reload
 ; CHECK-NOCPA-O0-NEXT:    bl printf

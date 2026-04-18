@@ -38,8 +38,8 @@ define i32 @foo() {
   ; CHECK-NEXT:   STRWui killed $w9, $sp, 11 :: (store (s32) into %stack.0)
   ; CHECK-NEXT:   renamable $w8 = LDRWui renamable $x8, 0 :: (dereferenceable load (i32) from @var1)
   ; CHECK-NEXT:   dead renamable $w8 = SUBSWri killed renamable $w8, 1, 0, implicit-def $nzcv
-  ; CHECK-NEXT:   Bcc 1, %bb.2, implicit killed $nzcv
-  ; CHECK-NEXT:   B %bb.1
+  ; CHECK-NEXT:   Bcc 0, %bb.1, implicit killed $nzcv
+  ; CHECK-NEXT:   B %bb.2
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT: bb.1.if.then:
   ; CHECK-NEXT:   successors: %bb.2(0x80000000)
@@ -107,8 +107,8 @@ define i32 @darwin_tls() {
   ; CHECK-NEXT:   STRWui killed $w9, $sp, 7 :: (store (s32) into %stack.0)
   ; CHECK-NEXT:   renamable $w8 = LDRWui killed renamable $x8, 0 :: (dereferenceable load (i32) from @var1)
   ; CHECK-NEXT:   dead renamable $w8 = SUBSWri killed renamable $w8, 1, 0, implicit-def $nzcv
-  ; CHECK-NEXT:   Bcc 1, %bb.2, implicit killed $nzcv
-  ; CHECK-NEXT:   B %bb.1
+  ; CHECK-NEXT:   Bcc 0, %bb.1, implicit killed $nzcv
+  ; CHECK-NEXT:   B %bb.2
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT: bb.1.if.then:
   ; CHECK-NEXT:   successors: %bb.2(0x80000000)
@@ -161,8 +161,8 @@ define i32 @imm_cost_too_large_cost_of_2() {
   ; CHECK-NEXT:   STRWui killed $w9, $sp, 11 :: (store (s32) into %stack.0)
   ; CHECK-NEXT:   renamable $w8 = LDRWui renamable $x8, 0 :: (dereferenceable load (i32) from @var1)
   ; CHECK-NEXT:   dead renamable $w8 = SUBSWri killed renamable $w8, 1, 0, implicit-def $nzcv
-  ; CHECK-NEXT:   Bcc 1, %bb.3, implicit killed $nzcv
-  ; CHECK-NEXT:   B %bb.1
+  ; CHECK-NEXT:   Bcc 0, %bb.1, implicit killed $nzcv
+  ; CHECK-NEXT:   B %bb.3
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT: bb.1.if.then:
   ; CHECK-NEXT:   successors: %bb.2(0x80000000)
@@ -229,8 +229,8 @@ define i64 @imm_cost_too_large_cost_of_4() {
   ; CHECK-NEXT:   STRXui killed $x9, $sp, 5 :: (store (s64) into %stack.0)
   ; CHECK-NEXT:   renamable $x8 = LDRXui renamable $x8, 0 :: (dereferenceable load (i64) from @var1_64, align 4)
   ; CHECK-NEXT:   dead renamable $x8 = SUBSXri killed renamable $x8, 1, 0, implicit-def $nzcv
-  ; CHECK-NEXT:   Bcc 1, %bb.3, implicit killed $nzcv
-  ; CHECK-NEXT:   B %bb.1
+  ; CHECK-NEXT:   Bcc 0, %bb.1, implicit killed $nzcv
+  ; CHECK-NEXT:   B %bb.3
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT: bb.1.if.then:
   ; CHECK-NEXT:   successors: %bb.2(0x80000000)
@@ -300,8 +300,8 @@ define i64 @f64_imm_cost_too_high(double %a) {
   ; CHECK-NEXT:   STRXui killed $x9, $sp, 5 :: (store (s64) into %stack.0)
   ; CHECK-NEXT:   renamable $x8 = LDRXui renamable $x8, 0 :: (dereferenceable load (i64) from @var1_64, align 4)
   ; CHECK-NEXT:   dead renamable $x8 = SUBSXri killed renamable $x8, 1, 0, implicit-def $nzcv
-  ; CHECK-NEXT:   Bcc 1, %bb.3, implicit killed $nzcv
-  ; CHECK-NEXT:   B %bb.1
+  ; CHECK-NEXT:   Bcc 0, %bb.1, implicit killed $nzcv
+  ; CHECK-NEXT:   B %bb.3
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT: bb.1.if.then:
   ; CHECK-NEXT:   successors: %bb.2(0x80000000)
@@ -365,8 +365,8 @@ define i64 @f64_imm_cheap(double %a) {
   ; CHECK-NEXT:   STRXui killed $x9, $sp, 3 :: (store (s64) into %stack.0)
   ; CHECK-NEXT:   renamable $x8 = LDRXui renamable $x8, 0 :: (dereferenceable load (i64) from @var1_64, align 4)
   ; CHECK-NEXT:   dead renamable $x8 = SUBSXri killed renamable $x8, 1, 0, implicit-def $nzcv
-  ; CHECK-NEXT:   Bcc 1, %bb.3, implicit killed $nzcv
-  ; CHECK-NEXT:   B %bb.1
+  ; CHECK-NEXT:   Bcc 0, %bb.1, implicit killed $nzcv
+  ; CHECK-NEXT:   B %bb.3
   ; CHECK-NEXT: {{  $}}
   ; CHECK-NEXT: bb.1.if.then:
   ; CHECK-NEXT:   successors: %bb.2(0x80000000)
