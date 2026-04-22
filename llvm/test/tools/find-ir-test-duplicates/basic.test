@@ -1,0 +1,15 @@
+# RUN: cd %llvm_src_root
+# RUN: %python utils/find_ir_test_duplicates.py \
+# RUN:   test/tools/find-ir-test-duplicates/Inputs/basic-a.ll \
+# RUN:   test/tools/find-ir-test-duplicates/Inputs/basic-b.ll \
+# RUN:   test/tools/find-ir-test-duplicates/Inputs/split-container.ll \
+# RUN:   | FileCheck %s
+
+# CHECK: Found 1 duplicate groups across 3 functions.
+# CHECK-NEXT: Group 1: 3 functions
+# CHECK-NEXT:   test/tools/find-ir-test-duplicates/Inputs/basic-a.ll::foo
+# CHECK-NEXT:   test/tools/find-ir-test-duplicates/Inputs/basic-b.ll::bar
+# CHECK-NEXT:   test/tools/find-ir-test-duplicates/Inputs/split-container.ll[duplicate.ll]::baz
+# CHECK-NOT: unique_a
+# CHECK-NOT: unique_b
+# CHECK-NOT: only_here

@@ -5,6 +5,7 @@ See lit.pod for more information.
 """
 
 import itertools
+import hashlib
 import os
 import platform
 import sys
@@ -66,6 +67,10 @@ def main(builtin_params={}):
             )
         )
         print(" ".join(sorted(features)))
+        sys.exit(0)
+
+    if opts.show_test_duplicates:
+        print_duplicate_tests(discovered_tests, opts.printPathRelativeCWD)
         sys.exit(0)
 
     # Command line overrides configuration for maxIndividualTestTime.
@@ -199,6 +204,53 @@ def print_discovered(tests, show_suites, show_tests):
         print("-- Available Tests --")
         for t in tests:
             print("  %s" % t.getFullName())
+
+
+def print_duplicate_tests(tests, printPathRelativeCWD):
+    tests.sort(key=lit.reports.by_suite_and_test_path)
+
+    sources_by_path = {}
+    for test in tests:
+        source_path = test.getSourcePath()
+        if not os.path.isfile(source_path):
+            continue
+        source_key = os.path.normcase(lit.util.abs_path_preserve_drive(source_path))
+        source = sources_by_path.get(source_key)
+        if source is None:
+            source = sources_by_path[source_key] = {
+                "digest": compute_file_digest(source_path),
+                "tests": [],
+            }
+        source["tests"].append(test)
+
+    duplicate_groups = {}
+    for source in sources_by_path.values():
+        duplicate_groups.setdefault(source["digest"], []).append(source["tests"])
+    duplicate_groups = [g for g in duplicate_groups.values() if len(g) > 1]
+    duplicate_groups.sort(key=lambda g: [t.getFullName() for t in g[0]])
+
+    print("-- Exact Duplicate Test Sources --")
+    if not duplicate_groups:
+        print("  No exact duplicate test sources found.")
+        return
+
+    for i, group in enumerate(duplicate_groups, 1):
+        num_tests = sum(len(tests_for_source) for tests_for_source in group)
+        print(f"  Group {i}: {len(group)} files, {num_tests} tests")
+        for tests_for_source in group:
+            for test in tests_for_source:
+                print("    %s" % test.getSummaryName(printPathRelativeCWD))
+
+
+def compute_file_digest(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as file:
+        while True:
+            data = file.read(1024 * 1024)
+            if not data:
+                break
+            digest.update(data)
+    return digest.digest()
 
 
 def determine_order(tests, order):

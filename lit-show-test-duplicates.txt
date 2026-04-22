@@ -1,0 +1,121 @@
+# invocation: llvm-lit --show-test-duplicates llvm/test 2>&1 | tee lit-show-test-duplicates.txt
+-- Exact Duplicate Test Sources --
+  Group 1: 2 files, 2 tests
+    LLVM :: CodeGen/AArch64/GlobalISel/postselectopt-dead-cc-defs-in-fcmp.mir
+    LLVM :: CodeGen/AArch64/GlobalISel/postselectopt-dead-cc-defs.mir
+  Group 2: 2 files, 2 tests
+    LLVM :: CodeGen/AVR/pseudo/SEXT.mir
+    LLVM :: CodeGen/AVR/pseudo/ZEXT.mir
+  Group 3: 2 files, 2 tests
+    LLVM :: CodeGen/Hexagon/cmp_pred.ll
+    LLVM :: CodeGen/Hexagon/cmp_pred_reg.ll
+  Group 4: 2 files, 2 tests
+    LLVM :: CodeGen/Hexagon/float.ll
+    LLVM :: CodeGen/Hexagon/floatconvert-ieee-rnd-near.ll
+  Group 5: 2 files, 2 tests
+    LLVM :: CodeGen/MIR/Generic/scalable-vector-type-err2.mir
+    LLVM :: CodeGen/MIR/Generic/scalable-vector-type-err3.mir
+  Group 6: 2 files, 2 tests
+    LLVM :: CodeGen/Mips/GlobalISel/regbankselect/long_ambiguous_chain_s32.mir
+    LLVM :: CodeGen/Mips/GlobalISel/regbankselect/long_ambiguous_chain_s64.mir
+  Group 7: 2 files, 2 tests
+    LLVM :: CodeGen/SystemZ/asm-15.ll
+    LLVM :: CodeGen/SystemZ/asm-16.ll
+  Group 8: 2 files, 2 tests
+    LLVM :: DebugInfo/Generic/assignment-tracking/instcombine/remove-redundant-dbg.ll
+    LLVM :: DebugInfo/Generic/assignment-tracking/sroa/remove-redundant-dbg.ll
+  Group 9: 2 files, 2 tests
+    LLVM :: Instrumentation/AddressSanitizer/AMDGPU/instrument-stack.ll
+    LLVM :: Instrumentation/AddressSanitizer/instrument-stack.ll
+  Group 10: 2 files, 2 tests
+    LLVM :: MC/AArch64/SME2/sqcvt-diagnostics.s
+    LLVM :: MC/AArch64/SME2/uqcvt-diagnostics.s
+  Group 11: 2 files, 2 tests
+    LLVM :: MC/ARM/directive-type-diagnostics.s
+    LLVM :: MC/ELF/ARM/directive-type-diagnostics.s
+  Group 12: 2 files, 2 tests
+    LLVM :: MC/Mips/macro-ddiv-bad.s
+    LLVM :: MC/Mips/macro-ddivu-bad.s
+  Group 13: 3 files, 3 tests
+    LLVM :: MC/Mips/mips32r6/invalid-mips2-wrong-error.s
+    LLVM :: MC/Mips/mips32r6/invalid-mips4-wrong-error.s
+    LLVM :: MC/Mips/mips64r6/invalid-mips4-wrong-error.s
+  Group 14: 2 files, 2 tests
+    LLVM :: MC/Mips/mips5/invalid-mips64r2-xfail.s
+    LLVM :: MC/Mips/mips64/invalid-mips64r2-xfail.s
+  Group 15: 2 files, 2 tests
+    LLVM :: MC/X86/F16C-32.s
+    LLVM :: MC/X86/F16C-64.s
+  Group 16: 2 files, 2 tests
+    LLVM :: Transforms/ADCE/basictest.ll
+    LLVM :: Transforms/ADCE/unreachable.ll
+  Group 17: 2 files, 2 tests
+    LLVM :: Transforms/InferAddressSpaces/AMDGPU/old-pass-regressions-inseltpoison.ll
+    LLVM :: Transforms/InferAddressSpaces/AMDGPU/old-pass-regressions.ll
+  Group 18: 2 files, 2 tests
+    LLVM :: Transforms/InterleavedAccess/AArch64/interleaved-accesses-inseltpoison.ll
+    LLVM :: Transforms/InterleavedAccess/AArch64/interleaved-accesses.ll
+  Group 19: 2 files, 2 tests
+    LLVM :: YAMLParser/spec-08-02.test
+    LLVM :: YAMLParser/spec-08-11.test
+  Group 20: 4 files, 4 tests
+    LLVM :: YAMLParser/spec-09-30.test
+    LLVM :: YAMLParser/spec-09-31.test
+    LLVM :: YAMLParser/spec-09-32.test
+    LLVM :: YAMLParser/spec-09-33.test
+  Group 21: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-3dnow.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-3dnow.s
+  Group 22: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-cmov.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-cmov.s
+  Group 23: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-cmpxchg.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-cmpxchg.s
+  Group 24: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-lea.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-lea.s
+  Group 25: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-lzcnt.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-lzcnt.s
+  Group 26: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-mmx.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-mmx.s
+  Group 27: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-popcnt.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-popcnt.s
+  Group 28: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-prefetchw.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-prefetchw.s
+  Group 29: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-sse1.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-sse1.s
+  Group 30: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-sse2.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-sse2.s
+  Group 31: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-sse3.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-sse3.s
+  Group 32: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-sse4a.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-sse4a.s
+  Group 33: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-x86_32.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-x86_32.s
+  Group 34: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-x86_64.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-x86_64.s
+  Group 35: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/Barcelona/resources-x87.s
+    LLVM :: tools/llvm-mca/X86/Generic/resources-x87.s
+  Group 36: 3 files, 3 tests
+    LLVM :: tools/llvm-mca/X86/IceLakeServer/resources-avx512vp2intersect.s
+    LLVM :: tools/llvm-mca/X86/SapphireRapids/resources-avx512vp2intersect.s
+    LLVM :: tools/llvm-mca/X86/Znver4/resources-avx512vp2intersect.s
+  Group 37: 3 files, 3 tests
+    LLVM :: tools/llvm-mca/X86/IceLakeServer/resources-avx512vp2intersectvl.s
+    LLVM :: tools/llvm-mca/X86/SapphireRapids/resources-avx512vp2intersectvl.s
+    LLVM :: tools/llvm-mca/X86/Znver4/resources-avx512vp2intersectvl.s
+  Group 38: 2 files, 2 tests
+    LLVM :: tools/llvm-mca/X86/SandyBridge/resources-clmul.s
+    LLVM :: tools/llvm-mca/X86/SandyBridge/resources-pclmul.s
