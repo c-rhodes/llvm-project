@@ -16,6 +16,7 @@
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/PointerIntPair.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/SparseMultiSet.h"
 #include "llvm/Analysis/AliasAnalysis.h"
@@ -230,13 +231,29 @@ namespace llvm {
                             unsigned Latency = 0);
 
     /// Adds dependencies as needed from all SUs in list to SU.
+    void addChainDependencies(SUnit *SU, SUList &SUs, unsigned Latency,
+                              SmallPtrSetImpl<SUnit *> &Visited) {
+      for (SUnit *Entry : SUs)
+        if (Visited.insert(Entry).second)
+          addChainDependency(SU, Entry, Latency);
+    }
+
+    /// Adds dependencies as needed from all SUs in list to SU.
     void addChainDependencies(SUnit *SU, SUList &SUs, unsigned Latency) {
       for (SUnit *Entry : SUs)
         addChainDependency(SU, Entry, Latency);
     }
 
     /// Adds dependencies as needed from all SUs in map, to SU.
+    void addChainDependencies(SUnit *SU, Value2SUsMap &Val2SUsMap,
+                              SmallPtrSetImpl<SUnit *> &Visited);
+
+    /// Adds dependencies as needed from all SUs in map, to SU.
     void addChainDependencies(SUnit *SU, Value2SUsMap &Val2SUsMap);
+
+    /// Adds dependencies as needed to SU, from all SUs mapped to V.
+    void addChainDependencies(SUnit *SU, Value2SUsMap &Val2SUsMap, ValueType V,
+                              SmallPtrSetImpl<SUnit *> &Visited);
 
     /// Adds dependencies as needed to SU, from all SUs mapped to V.
     void addChainDependencies(SUnit *SU, Value2SUsMap &Val2SUsMap,

@@ -15,6 +15,7 @@
 
 #include "llvm/ADT/IntEqClasses.h"
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/SparseSet.h"
 #include "llvm/ADT/iterator_range.h"
@@ -692,11 +693,26 @@ public:
   void dump();
 };
 
+void ScheduleDAGInstrs::addChainDependencies(
+    SUnit *SU, Value2SUsMap &Val2SUsMap, SmallPtrSetImpl<SUnit *> &Visited) {
+  for (auto &I : Val2SUsMap)
+    addChainDependencies(SU, I.second, Val2SUsMap.getTrueMemOrderLatency(),
+                         Visited);
+}
+
 void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
                                              Value2SUsMap &Val2SUsMap) {
   for (auto &I : Val2SUsMap)
-    addChainDependencies(SU, I.second,
-                         Val2SUsMap.getTrueMemOrderLatency());
+    addChainDependencies(SU, I.second, Val2SUsMap.getTrueMemOrderLatency());
+}
+
+void ScheduleDAGInstrs::addChainDependencies(
+    SUnit *SU, Value2SUsMap &Val2SUsMap, ValueType V,
+    SmallPtrSetImpl<SUnit *> &Visited) {
+  Value2SUsMap::iterator Itr = Val2SUsMap.find(V);
+  if (Itr != Val2SUsMap.end())
+    addChainDependencies(SU, Itr->second, Val2SUsMap.getTrueMemOrderLatency(),
+                         Visited);
 }
 
 void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
@@ -704,8 +720,7 @@ void ScheduleDAGInstrs::addChainDependencies(SUnit *SU,
                                              ValueType V) {
   Value2SUsMap::iterator Itr = Val2SUsMap.find(V);
   if (Itr != Val2SUsMap.end())
-    addChainDependencies(SU, Itr->second,
-                         Val2SUsMap.getTrueMemOrderLatency());
+    addChainDependencies(SU, Itr->second, Val2SUsMap.getTrueMemOrderLatency());
 }
 
 void ScheduleDAGInstrs::addBarrierChain(Value2SUsMap &map) {
@@ -961,6 +976,10 @@ void ScheduleDAGInstrs::buildSchedGraph(AAResults *AA,
     if (BarrierChain)
       BarrierChain->addPredBarrier(SU);
 
+    // The same predecessor can be reached through multiple underlying-object
+    // buckets. Avoid re-running the alias query for duplicate SUnits.
+    SmallPtrSet<SUnit *, 8> VisitedMemPreds;
+
     // Find the underlying objects for MI. The Objs vector is either
     // empty, or filled with the Values of memory locations which this
     // SU depends on.
@@ -971,10 +990,10 @@ void ScheduleDAGInstrs::buildSchedGraph(AAResults *AA,
     if (MI.mayStore()) {
       if (!ObjsFound) {
         // An unknown store depends on all stores and loads.
-        addChainDependencies(SU, Stores);
-        addChainDependencies(SU, NonAliasStores);
-        addChainDependencies(SU, Loads);
-        addChainDependencies(SU, NonAliasLoads);
+        addChainDependencies(SU, Stores, VisitedMemPreds);
+        addChainDependencies(SU, NonAliasStores, VisitedMemPreds);
+        addChainDependencies(SU, Loads, VisitedMemPreds);
+        addChainDependencies(SU, NonAliasLoads, VisitedMemPreds);
 
         // Map this store to 'UnknownValue'.
         Stores.insert(SU, UnknownValue);
@@ -986,8 +1005,10 @@ void ScheduleDAGInstrs::buildSchedGraph(AAResults *AA,
           bool ThisMayAlias = UnderlObj.mayAlias();
 
           // Add dependencies to previous stores and loads mapped to V.
-          addChainDependencies(SU, (ThisMayAlias ? Stores : NonAliasStores), V);
-          addChainDependencies(SU, (ThisMayAlias ? Loads : NonAliasLoads), V);
+          addChainDependencies(SU, (ThisMayAlias ? Stores : NonAliasStores), V,
+                               VisitedMemPreds);
+          addChainDependencies(SU, (ThisMayAlias ? Loads : NonAliasLoads), V,
+                               VisitedMemPreds);
         }
         // Update the store map after all chains have been added to avoid adding
         // self-loop edge if multiple underlying objects are present.
@@ -1000,14 +1021,14 @@ void ScheduleDAGInstrs::buildSchedGraph(AAResults *AA,
         }
         // The store may have dependencies to unanalyzable loads and
         // stores.
-        addChainDependencies(SU, Loads, UnknownValue);
-        addChainDependencies(SU, Stores, UnknownValue);
+        addChainDependencies(SU, Loads, UnknownValue, VisitedMemPreds);
+        addChainDependencies(SU, Stores, UnknownValue, VisitedMemPreds);
       }
     } else { // SU is a load.
       if (!ObjsFound) {
         // An unknown load depends on all stores.
-        addChainDependencies(SU, Stores);
-        addChainDependencies(SU, NonAliasStores);
+        addChainDependencies(SU, Stores, VisitedMemPreds);
+        addChainDependencies(SU, NonAliasStores, VisitedMemPreds);
 
         Loads.insert(SU, UnknownValue);
       } else {
@@ -1017,13 +1038,14 @@ void ScheduleDAGInstrs::buildSchedGraph(AAResults *AA,
 
           // Add precise dependencies against all previously seen stores
           // mapping to the same Value(s).
-          addChainDependencies(SU, (ThisMayAlias ? Stores : NonAliasStores), V);
+          addChainDependencies(SU, (ThisMayAlias ? Stores : NonAliasStores), V,
+                               VisitedMemPreds);
 
           // Map this load to V.
           (ThisMayAlias ? Loads : NonAliasLoads).insert(SU, V);
         }
         // The load may have dependencies to unanalyzable stores.
-        addChainDependencies(SU, Stores, UnknownValue);
+        addChainDependencies(SU, Stores, UnknownValue, VisitedMemPreds);
       }
     }
 
