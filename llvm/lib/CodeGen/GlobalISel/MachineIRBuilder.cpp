@@ -468,7 +468,7 @@ MachineInstrBuilder MachineIRBuilder::buildLoadInstr(unsigned Opcode,
   auto MIB = buildInstr(Opcode);
   Res.addDefToMIB(*getMRI(), MIB);
   Addr.addSrcToMIB(MIB);
-  MIB.addMemOperand(&MMO);
+  MIB.setMemRefs({&MMO});
   return MIB;
 }
 
@@ -498,7 +498,7 @@ MachineInstrBuilder MachineIRBuilder::buildStore(const SrcOp &Val,
   auto MIB = buildInstr(TargetOpcode::G_STORE);
   Val.addSrcToMIB(MIB);
   Addr.addSrcToMIB(MIB);
-  MIB.addMemOperand(&MMO);
+  MIB.setMemRefs({&MMO});
   return MIB;
 }
 
@@ -1031,7 +1031,7 @@ MachineInstrBuilder MachineIRBuilder::buildAtomicCmpXchgWithSuccess(
   Addr.addSrcToMIB(MIB);
   CmpVal.addSrcToMIB(MIB);
   NewVal.addSrcToMIB(MIB);
-  MIB.addMemOperand(&MMO);
+  MIB.setMemRefs({&MMO});
   return MIB;
 }
 
@@ -1057,7 +1057,7 @@ MachineIRBuilder::buildAtomicCmpXchg(const DstOp &OldValRes, const SrcOp &Addr,
   Addr.addSrcToMIB(MIB);
   CmpVal.addSrcToMIB(MIB);
   NewVal.addSrcToMIB(MIB);
-  MIB.addMemOperand(&MMO);
+  MIB.setMemRefs({&MMO});
   return MIB;
 }
 
@@ -1080,7 +1080,7 @@ MachineInstrBuilder MachineIRBuilder::buildAtomicRMW(
   OldValRes.addDefToMIB(*getMRI(), MIB);
   Addr.addSrcToMIB(MIB);
   Val.addSrcToMIB(MIB);
-  MIB.addMemOperand(&MMO);
+  MIB.setMemRefs({&MMO});
   return MIB;
 }
 
@@ -1212,7 +1212,7 @@ MachineInstrBuilder MachineIRBuilder::buildPrefetch(const SrcOp &Addr,
   auto MIB = buildInstr(TargetOpcode::G_PREFETCH);
   Addr.addSrcToMIB(MIB);
   MIB.addImm(RW).addImm(Locality).addImm(CacheType);
-  MIB.addMemOperand(&MMO);
+  MIB.setMemRefs({&MMO});
   return MIB;
 }
 
