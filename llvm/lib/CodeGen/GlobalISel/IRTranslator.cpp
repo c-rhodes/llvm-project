@@ -193,13 +193,22 @@ IRTranslator::allocateVRegs(const Value &Val) {
   if (VRegsIt != VMap.vregs_end())
     return *VRegsIt->second;
   auto *Regs = VMap.getVRegs(Val);
-  auto *Offsets = VMap.getOffsets(Val);
-  SmallVector<LLT, 4> SplitTys;
-  computeValueLLTs(*DL, *Val.getType(), SplitTys,
-                   Offsets->empty() ? Offsets : nullptr);
+  auto &SplitTys = getOrCreateSplitTys(Val);
   for (unsigned i = 0; i < SplitTys.size(); ++i)
     Regs->push_back(0);
   return *Regs;
+}
+
+IRTranslator::ValueToVRegInfo::SplitTypeListT &
+IRTranslator::getOrCreateSplitTys(const Value &Val) {
+  auto *SplitTys = VMap.getSplitTys(Val);
+  if (!SplitTys->empty())
+    return *SplitTys;
+
+  auto *Offsets = VMap.getOffsets(Val);
+  computeValueLLTs(*DL, *Val.getType(), *SplitTys,
+                   Offsets->empty() ? Offsets : nullptr);
+  return *SplitTys;
 }
 
 ArrayRef<Register> IRTranslator::getOrCreateVRegs(const Value &Val) {
@@ -212,15 +221,12 @@ ArrayRef<Register> IRTranslator::getOrCreateVRegs(const Value &Val) {
 
   // Create entry for this type.
   auto *VRegs = VMap.getVRegs(Val);
-  auto *Offsets = VMap.getOffsets(Val);
 
   if (!Val.getType()->isTokenTy())
     assert(Val.getType()->isSized() &&
            "Don't know how to create an empty vreg");
 
-  SmallVector<LLT, 4> SplitTys;
-  computeValueLLTs(*DL, *Val.getType(), SplitTys,
-                   Offsets->empty() ? Offsets : nullptr);
+  auto &SplitTys = getOrCreateSplitTys(Val);
 
   if (!isa<Constant>(Val)) {
     for (auto Ty : SplitTys)
