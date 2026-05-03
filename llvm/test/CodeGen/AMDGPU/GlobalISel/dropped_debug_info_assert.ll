@@ -34,7 +34,7 @@ define amdgpu_kernel void @call_debug_loc() {
   ; CHECK-NEXT:   [[COPY17:%[0-9]+]]:vgpr_32 = COPY [[S_MOV_B32_1]]
   ; CHECK-NEXT:   [[V_LSHLREV_B32_e64_1:%[0-9]+]]:vgpr_32 = V_LSHLREV_B32_e64 [[COPY17]], [[COPY]], implicit $exec,  debug-location !7
   ; CHECK-NEXT:   [[V_OR3_B32_e64_:%[0-9]+]]:vgpr_32 = V_OR3_B32_e64 [[COPY2]], [[V_LSHLREV_B32_e64_]], [[V_LSHLREV_B32_e64_1]], implicit $exec,  debug-location !7
-  ; CHECK-NEXT:   [[COPY18:%[0-9]+]]:sgpr_128 = COPY $sgpr0_sgpr1_sgpr2_sgpr3,  debug-location !7
+  ; CHECK-NEXT:   [[COPY18:%[0-9]+]]:sgpr_128 = COPY $private_rsrc_reg,  debug-location !7
   ; CHECK-NEXT:   $sgpr0_sgpr1_sgpr2_sgpr3 = COPY [[COPY18]],  debug-location !7
   ; CHECK-NEXT:   $sgpr4_sgpr5 = COPY [[COPY10]],  debug-location !7
   ; CHECK-NEXT:   $sgpr6_sgpr7 = COPY [[COPY11]],  debug-location !7

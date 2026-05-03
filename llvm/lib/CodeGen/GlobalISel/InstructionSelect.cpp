@@ -323,9 +323,7 @@ bool InstructionSelect::selectMachineFunction(MachineFunction &MF) {
     }
   }
 
-  // FIXME: FinalizeISel pass calls finalizeLowering, so it's called twice.
   auto &TLI = *MF.getSubtarget().getTargetLowering();
-  TLI.finalizeLowering(MF);
 
   LLVM_DEBUG({
     dbgs() << "Rules covered by selecting function: " << MF.getName() << ":";

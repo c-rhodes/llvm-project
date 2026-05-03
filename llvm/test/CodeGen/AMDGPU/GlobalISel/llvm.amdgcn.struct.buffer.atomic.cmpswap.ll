@@ -900,8 +900,8 @@ define amdgpu_ps double @struct_buffer_atomic_cmpswap_i64__sgpr_val__sgpr_cmp__v
   ; GFX1250-NEXT:   [[COPY8:%[0-9]+]]:sreg_32 = COPY $sgpr6
   ; GFX1250-NEXT:   [[COPY9:%[0-9]+]]:sreg_32 = COPY $sgpr7
   ; GFX1250-NEXT:   [[COPY10:%[0-9]+]]:vgpr_32 = COPY $vgpr4
-  ; GFX1250-NEXT:   [[COPY11:%[0-9]+]]:vreg_64_align2 = COPY [[REG_SEQUENCE]]
-  ; GFX1250-NEXT:   [[COPY12:%[0-9]+]]:vreg_64_align2 = COPY [[REG_SEQUENCE1]]
+  ; GFX1250-NEXT:   [[COPY11:%[0-9]+]]:vreg_64 = COPY [[REG_SEQUENCE]]
+  ; GFX1250-NEXT:   [[COPY12:%[0-9]+]]:vreg_64 = COPY [[REG_SEQUENCE1]]
   ; GFX1250-NEXT:   [[COPY13:%[0-9]+]]:vgpr_32 = COPY [[COPY8]]
   ; GFX1250-NEXT:   [[COPY14:%[0-9]+]]:vgpr_32 = COPY [[COPY9]]
   ; GFX1250-NEXT:   [[S_MOV_B32_:%[0-9]+]]:sreg_32_xm0_xexec = S_MOV_B32 $exec_lo
@@ -1099,8 +1099,8 @@ define amdgpu_ps void @struct_buffer_atomic_cmpswap_i64_noret__sgpr_val__sgpr_cm
   ; GFX1250-NEXT:   [[COPY8:%[0-9]+]]:sreg_32 = COPY $sgpr6
   ; GFX1250-NEXT:   [[COPY9:%[0-9]+]]:sreg_32 = COPY $sgpr7
   ; GFX1250-NEXT:   [[COPY10:%[0-9]+]]:vgpr_32 = COPY $vgpr4
-  ; GFX1250-NEXT:   [[COPY11:%[0-9]+]]:vreg_64_align2 = COPY [[REG_SEQUENCE]]
-  ; GFX1250-NEXT:   [[COPY12:%[0-9]+]]:vreg_64_align2 = COPY [[REG_SEQUENCE1]]
+  ; GFX1250-NEXT:   [[COPY11:%[0-9]+]]:vreg_64 = COPY [[REG_SEQUENCE]]
+  ; GFX1250-NEXT:   [[COPY12:%[0-9]+]]:vreg_64 = COPY [[REG_SEQUENCE1]]
   ; GFX1250-NEXT:   [[COPY13:%[0-9]+]]:vgpr_32 = COPY [[COPY8]]
   ; GFX1250-NEXT:   [[COPY14:%[0-9]+]]:vgpr_32 = COPY [[COPY9]]
   ; GFX1250-NEXT:   [[S_MOV_B32_:%[0-9]+]]:sreg_32_xm0_xexec = S_MOV_B32 $exec_lo
