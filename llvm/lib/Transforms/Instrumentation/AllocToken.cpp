@@ -13,6 +13,7 @@
 
 #include "llvm/Transforms/Instrumentation/AllocToken.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringExtras.h"
@@ -562,6 +563,13 @@ AllocTokenPass::AllocTokenPass(AllocTokenOptions Opts)
     : Options(std::move(Opts)) {}
 
 PreservedAnalyses AllocTokenPass::run(Module &M, ModuleAnalysisManager &MAM) {
+  if (llvm::none_of(M, [](const Function &F) {
+        return (F.getIntrinsicID() == Intrinsic::alloc_token_id &&
+                !F.use_empty()) ||
+               F.hasFnAttribute(Attribute::SanitizeAllocToken);
+      }))
+    return PreservedAnalyses::all();
+
   AllocToken Pass(Options, M, MAM);
   bool Modified = false;
 

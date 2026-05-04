@@ -49,7 +49,6 @@
 ; CHECK-THINLTO: Running pass: DropTypeTestsPass
 ; CHECK-THINLTO-NEXT: Running pass: CoroConditionalWrapper
 ; CHECK-THINLTO-NEXT: Running pass: AllocTokenPass
-; CHECK-THINLTO-NEXT: Running analysis: InnerAnalysisManagerProxy
 ; CHECK-THINLTO-NEXT: Running pass: EliminateAvailableExternallyPass
 ; CHECK-THINLTO-NEXT: Running pass: GlobalDCEPass
 ; CHECK-LTO: Running pass: CrossDSOCFIPass on [module]
