@@ -140,6 +140,8 @@ PassTimingInfo *PassTimingInfo::TheTimeInfo;
 } // namespace
 
 Timer *llvm::getPassTimer(Pass *P) {
+  if (!TimePassesIsEnabled && !legacy::PassTimingInfo::TheTimeInfo)
+    return nullptr;
   legacy::PassTimingInfo::init();
   if (legacy::PassTimingInfo::TheTimeInfo)
     return legacy::PassTimingInfo::TheTimeInfo->getPassTimer(P, P);
