@@ -818,10 +818,10 @@ bool CallLowering::handleAssignments(ValueHandler &Handler,
 
   const unsigned NumArgs = Args.size();
 
-  // Stores thunks for outgoing register assignments. This is used so we delay
-  // generating register copies until mem loc assignments are done. We do this
-  // so that if the target is using the delayed stack protector feature, we can
-  // find the split point of the block accurately. E.g. if we have:
+  // Stores outgoing register assignments. This is used so we delay generating
+  // register copies until mem loc assignments are done. We do this so that if
+  // the target is using the delayed stack protector feature, we can find the
+  // split point of the block accurately. E.g. if we have:
   // G_STORE %val, %memloc
   // $x0 = COPY %foo
   // $x1 = COPY %bar
@@ -830,7 +830,20 @@ bool CallLowering::handleAssignments(ValueHandler &Handler,
   // the copy to $x0. If instead the G_STORE instruction immediately precedes
   // the CALL, then we'd prematurely choose the CALL as the split point, thus
   // generating a split block with a CALL that uses undefined physregs.
-  SmallVector<std::function<void()>> DelayedOutgoingRegAssignments;
+  struct DelayedOutgoingRegAssignment {
+    Register ValVReg;
+    Register PhysReg;
+    CCValAssign VA;
+    ISD::ArgFlagsTy Flags;
+  };
+  enum class DelayedOutgoingAssignmentKind { Reg, Custom };
+  struct DelayedOutgoingAssignment {
+    DelayedOutgoingAssignmentKind Kind;
+    unsigned Index;
+  };
+  SmallVector<DelayedOutgoingAssignment, 4> DelayedOutgoingAssignments;
+  SmallVector<DelayedOutgoingRegAssignment, 4> DelayedOutgoingRegAssignments;
+  SmallVector<std::function<void()>, 1> DelayedOutgoingCustomAssignments;
 
   for (unsigned i = 0, j = 0; i != NumArgs; ++i, ++j) {
     assert(j < ArgLocs.size() && "Skipped too many arg locs");
@@ -841,8 +854,12 @@ bool CallLowering::handleAssignments(ValueHandler &Handler,
       std::function<void()> Thunk;
       unsigned NumArgRegs = Handler.assignCustomValue(
           Args[i], ArrayRef(ArgLocs).slice(j), &Thunk);
-      if (Thunk)
-        DelayedOutgoingRegAssignments.emplace_back(Thunk);
+      if (Thunk) {
+        DelayedOutgoingAssignments.push_back(
+            {DelayedOutgoingAssignmentKind::Custom,
+             unsigned(DelayedOutgoingCustomAssignments.size())});
+        DelayedOutgoingCustomAssignments.emplace_back(std::move(Thunk));
+      }
       if (!NumArgRegs)
         return false;
       j += (NumArgRegs - 1);
@@ -1015,9 +1032,11 @@ bool CallLowering::handleAssignments(ValueHandler &Handler,
       } else if (Handler.isIncomingArgumentHandler()) {
         Handler.assignValueToReg(ArgReg, VA.getLocReg(), VA, Flags);
       } else {
-        DelayedOutgoingRegAssignments.emplace_back([=, &Handler]() {
-          Handler.assignValueToReg(ArgReg, VA.getLocReg(), VA, Flags);
-        });
+        DelayedOutgoingAssignments.push_back(
+            {DelayedOutgoingAssignmentKind::Reg,
+             unsigned(DelayedOutgoingRegAssignments.size())});
+        DelayedOutgoingRegAssignments.push_back(
+            {ArgReg, VA.getLocReg(), VA, Flags});
       }
 
       // Finish the handling of indirect parameter passing when receiving
@@ -1055,8 +1074,16 @@ bool CallLowering::handleAssignments(ValueHandler &Handler,
 
     j += NumParts - 1;
   }
-  for (auto &Fn : DelayedOutgoingRegAssignments)
-    Fn();
+  for (DelayedOutgoingAssignment Assignment : DelayedOutgoingAssignments) {
+    if (Assignment.Kind == DelayedOutgoingAssignmentKind::Custom) {
+      DelayedOutgoingCustomAssignments[Assignment.Index]();
+      continue;
+    }
+    DelayedOutgoingRegAssignment &RegAssignment =
+        DelayedOutgoingRegAssignments[Assignment.Index];
+    Handler.assignValueToReg(RegAssignment.ValVReg, RegAssignment.PhysReg,
+                             RegAssignment.VA, RegAssignment.Flags);
+  }
 
   return true;
 }
