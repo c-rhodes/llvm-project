@@ -66,6 +66,9 @@ Register llvm::constrainOperandRegClass(
   // Assume physical registers are properly constrained.
   assert(Reg.isVirtual() && "PhysReg not implemented");
 
+  if (MRI.getRegClassOrNull(Reg) == &RegClass)
+    return Reg;
+
   // Save the old register class to check whether
   // the change notifications will be required.
   // TODO: A better approach would be to pass
