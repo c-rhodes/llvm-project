@@ -446,8 +446,6 @@ RISCVLegalizerInfo::RISCVLegalizerInfo(const RISCVSubtarget &ST)
       .legalFor({{p0, sXLen}})
       .clampScalar(1, sXLen, sXLen);
 
-  getActionDefinitionsBuilder(G_BR).alwaysLegal();
-
   getActionDefinitionsBuilder(G_BRCOND).legalFor({sXLen}).minScalar(0, sXLen);
 
   getActionDefinitionsBuilder(G_BRJT).customFor({{p0, sXLen}});

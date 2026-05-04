@@ -177,8 +177,6 @@ MipsLegalizerInfo::MipsLegalizerInfo(const MipsSubtarget &ST) {
       .minScalar(0, s32)
       .minScalar(1, s32);
 
-  getActionDefinitionsBuilder(G_BR).alwaysLegal();
-
   getActionDefinitionsBuilder(G_BRCOND)
       .legalFor({s32})
       .minScalar(0, s32);

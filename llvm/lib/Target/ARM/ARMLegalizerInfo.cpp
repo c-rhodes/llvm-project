@@ -134,7 +134,6 @@ ARMLegalizerInfo::ARMLegalizerInfo(const ARMSubtarget &ST) : ST(ST) {
       .legalFor({{p0, s32}})
       .minScalar(1, s32);
 
-  getActionDefinitionsBuilder(G_BR).alwaysLegal();
   getActionDefinitionsBuilder(G_BRCOND).legalFor({s1});
 
   if (!ST.useSoftFloat() && ST.hasVFP2Base()) {

@@ -40,6 +40,11 @@ static cl::opt<bool> VerboseVerifyLegalizerInfo(
              "being verified"),
     cl::Hidden);
 
+LegalizerInfo::LegalizerInfo() {
+  // Like ISD::BR, G_BR is target-independent and requires no legalization.
+  getActionDefinitionsBuilder(TargetOpcode::G_BR).alwaysLegal();
+}
+
 raw_ostream &llvm::operator<<(raw_ostream &OS, LegalizeAction Action) {
   switch (Action) {
   case Legal:

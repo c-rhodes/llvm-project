@@ -1337,6 +1337,7 @@ public:
 
 class LLVM_ABI LegalizerInfo {
 public:
+  LegalizerInfo();
   virtual ~LegalizerInfo() = default;
 
   unsigned getOpcodeIdxForOpcode(unsigned Opcode) const;

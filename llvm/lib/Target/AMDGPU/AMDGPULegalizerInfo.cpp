@@ -737,8 +737,6 @@ AMDGPULegalizerInfo::AMDGPULegalizerInfo(const GCNSubtarget &ST_,
   const LLT I64 = LLT::integer(64);
   const LLT V2I16 = LLT::fixed_vector(2, I16);
 
-  getActionDefinitionsBuilder(G_BR).alwaysLegal();
-
   // s1 for VCC branches, s32 for SCC branches.
   getActionDefinitionsBuilder(G_BRCOND).legalFor({S1, S32});
 

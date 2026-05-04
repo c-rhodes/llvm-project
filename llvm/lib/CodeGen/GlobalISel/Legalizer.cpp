@@ -115,6 +115,17 @@ static bool isArtifact(const MachineInstr &MI) {
     return AllowGInsertAsArtifact;
   }
 }
+
+// Return true if \p MI should be added to the legalizer worklists.
+static bool shouldAddToWorklist(const MachineInstr &MI) {
+  // Only legalize pre-isel generic instructions.
+  if (!isPreISelGenericOpcode(MI.getOpcode()))
+    return false;
+
+  // Unconditional branches are always legal and have no typed operands.
+  return MI.getOpcode() != TargetOpcode::G_BR;
+}
+
 using InstListTy = GISelWorkList<256>;
 using ArtifactListTy = GISelWorkList<128>;
 
@@ -131,10 +142,7 @@ public:
       : InstList(Insts), ArtifactList(Arts) {}
 
   void createdOrChangedInstr(MachineInstr &MI) {
-    // Only legalize pre-isel generic instructions.
-    // Legalization process could generate Target specific pseudo
-    // instructions with generic types. Don't record them
-    if (isPreISelGenericOpcode(MI.getOpcode())) {
+    if (shouldAddToWorklist(MI)) {
       if (isArtifact(MI))
         ArtifactList.insert(&MI);
       else
@@ -193,9 +201,7 @@ Legalizer::MFResult Legalizer::legalizeMachineFunction(
     if (MBB->empty())
       continue;
     for (MachineInstr &MI : *MBB) {
-      // Only legalize pre-isel generic instructions: others don't have types
-      // and are assumed to be legal.
-      if (!isPreISelGenericOpcode(MI.getOpcode()))
+      if (!shouldAddToWorklist(MI))
         continue;
       if (isArtifact(MI))
         ArtifactList.deferred_insert(&MI);

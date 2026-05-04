@@ -50,6 +50,11 @@ std::ostream &operator<<(std::ostream &OS, const llvm::LegalizeActionStep Ty) {
     EXPECT_EQ(LegalizeActionStep(Action, Index, Type), A) << A;                \
   } while (0)
 
+TEST(LegalizerInfoTest, TargetIndependentRules) {
+  LegalizerInfo LI;
+  EXPECT_ACTION(Legal, 0, LLT(), LegalityQuery(TargetOpcode::G_BR, {}));
+}
+
 TEST(LegalizerInfoTest, RuleSets) {
   using namespace TargetOpcode;
 

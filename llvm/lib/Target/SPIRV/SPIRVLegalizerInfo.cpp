@@ -500,7 +500,6 @@ SPIRVLegalizerInfo::SPIRVLegalizerInfo(const SPIRVSubtarget &ST) {
   getActionDefinitionsBuilder(G_GLOBAL_VALUE).legalFor(allPtrs);
 
   // Control-flow. In some cases (e.g. constants) s1 may be promoted to s32.
-  getActionDefinitionsBuilder(G_BR).alwaysLegal();
   getActionDefinitionsBuilder(G_BRCOND).legalFor({s1, s32});
 
   getActionDefinitionsBuilder(G_FFREXP).legalForCartesianProduct(
