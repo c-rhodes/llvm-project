@@ -240,7 +240,7 @@ public:
 /// could be freed.
 class LLVM_ABI MachineOptimizationRemarkEmitterPass
     : public MachineFunctionPass {
-  std::unique_ptr<MachineOptimizationRemarkEmitter> ORE;
+  std::optional<MachineOptimizationRemarkEmitter> ORE;
 
 public:
   MachineOptimizationRemarkEmitterPass();

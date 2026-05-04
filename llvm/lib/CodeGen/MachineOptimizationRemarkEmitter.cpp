@@ -80,7 +80,7 @@ bool MachineOptimizationRemarkEmitterPass::runOnMachineFunction(
   else
     MBFI = nullptr;
 
-  ORE = std::make_unique<MachineOptimizationRemarkEmitter>(MF, MBFI);
+  ORE.emplace(MF, MBFI);
   return false;
 }
 
