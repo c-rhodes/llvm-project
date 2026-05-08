@@ -12,14 +12,16 @@
 #ifndef LLVM_CODEGEN_GLOBALISEL_LOSTDEBUGLOCOBSERVER_H
 #define LLVM_CODEGEN_GLOBALISEL_LOSTDEBUGLOCOBSERVER_H
 
-#include "llvm/ADT/SmallSet.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/CodeGen/GlobalISel/GISelChangeObserver.h"
 #include "llvm/Support/Compiler.h"
 
 namespace llvm {
+class DILocation;
+
 class LLVM_ABI LostDebugLocObserver : public GISelChangeObserver {
   StringRef DebugType;
-  SmallSet<DebugLoc, 4> LostDebugLocs;
+  SmallPtrSet<const DILocation *, 4> LostDebugLocs;
   SmallPtrSet<MachineInstr *, 4> PotentialMIsForDebugLocs;
   unsigned NumLostDebugLocs = 0;
 
