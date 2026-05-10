@@ -35,6 +35,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 namespace llvm {
 
@@ -862,7 +863,7 @@ bool GIMatchTableExecutor::executeMatchTable(
           (Exec.*ExecInfo.ComplexPredicates[ComplexPredicateID])(
               State.MIs[InsnID]->getOperand(OpIdx));
       if (Renderer)
-        State.Renderers[RendererID] = *Renderer;
+        State.Renderers[RendererID] = std::move(*Renderer);
       else if (handleReject() == RejectAndGiveUp)
         return false;
       break;
