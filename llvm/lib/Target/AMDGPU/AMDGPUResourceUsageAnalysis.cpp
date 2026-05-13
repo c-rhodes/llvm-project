@@ -232,7 +232,7 @@ AMDGPUResourceUsageAnalysisImpl::analyzeResourceUsage(
           break;
         }
 
-        const TargetRegisterClass *RC = TRI.getPhysRegBaseClass(Reg);
+        const TargetRegisterClass *RC = TRI.getMinimalPhysRegClass(Reg);
         assert((!RC || TRI.isVGPRClass(RC) || TRI.isSGPRClass(RC) ||
                 TRI.isAGPRClass(RC) || AMDGPU::TTMP_32RegClass.contains(Reg) ||
                 AMDGPU::TTMP_64RegClass.contains(Reg) ||

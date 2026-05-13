@@ -2126,14 +2126,14 @@ bool SIInstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
     break;
   case AMDGPU::AV_MOV_B32_IMM_PSEUDO: {
     Register Dst = MI.getOperand(0).getReg();
-    bool IsAGPR = SIRegisterInfo::isAGPRClass(RI.getPhysRegBaseClass(Dst));
+    bool IsAGPR = SIRegisterInfo::isAGPRClass(RI.getMinimalPhysRegClass(Dst));
     MI.setDesc(
         get(IsAGPR ? AMDGPU::V_ACCVGPR_WRITE_B32_e64 : AMDGPU::V_MOV_B32_e32));
     break;
   }
   case AMDGPU::AV_MOV_B64_IMM_PSEUDO: {
     Register Dst = MI.getOperand(0).getReg();
-    if (SIRegisterInfo::isAGPRClass(RI.getPhysRegBaseClass(Dst))) {
+    if (SIRegisterInfo::isAGPRClass(RI.getMinimalPhysRegClass(Dst))) {
       int64_t Imm = MI.getOperand(1).getImm();
 
       Register DstLo = RI.getSubReg(Dst, AMDGPU::sub0);
@@ -10906,7 +10906,7 @@ ValueUniformity SIInstrInfo::getValueUniformity(const MachineInstr &MI) const {
     const MachineOperand &srcOp = MI.getOperand(1);
     if (srcOp.isReg() && srcOp.getReg().isPhysical()) {
       const TargetRegisterClass *regClass =
-          RI.getPhysRegBaseClass(srcOp.getReg());
+          RI.getMinimalPhysRegClass(srcOp.getReg());
       return RI.isSGPRClass(regClass) ? ValueUniformity::AlwaysUniform
                                       : ValueUniformity::NeverUniform;
     }

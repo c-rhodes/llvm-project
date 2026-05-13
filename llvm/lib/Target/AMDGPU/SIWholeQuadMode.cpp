@@ -602,7 +602,7 @@ char SIWholeQuadMode::scanInstructions(
         for (const MachineOperand &MO : MI.defs()) {
           Register Reg = MO.getReg();
           if (Reg.isPhysical() &&
-              TRI->hasVectorRegisters(TRI->getPhysRegBaseClass(Reg))) {
+              TRI->hasVectorRegisters(TRI->getMinimalPhysRegClass(Reg))) {
             Flags = StateWQM;
             break;
           }

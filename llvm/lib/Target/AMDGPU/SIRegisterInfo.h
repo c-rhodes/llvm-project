@@ -232,11 +232,11 @@ public:
 
   bool isSGPRReg(const MachineRegisterInfo &MRI, Register Reg) const;
   bool isSGPRPhysReg(Register Reg) const {
-    return isSGPRClass(getPhysRegBaseClass(Reg));
+    return isSGPRClass(getMinimalPhysRegClass(Reg));
   }
 
   bool isVGPRPhysReg(Register Reg) const {
-    return isVGPRClass(getPhysRegBaseClass(Reg));
+    return isVGPRClass(getMinimalPhysRegClass(Reg));
   }
 
   /// \returns true if this class contains only VGPR registers

@@ -2724,7 +2724,7 @@ bool SIRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI,
         RegState MaterializedRegFlags =
             getKillRegState(MaterializedReg != FrameReg);
 
-        if (isVGPRClass(getPhysRegBaseClass(MaterializedReg))) {
+        if (isVGPRClass(getMinimalPhysRegClass(MaterializedReg))) {
           // If we know we have a VGPR already, it's more likely the other
           // operand is a legal vsrc0.
           AddI32
@@ -3691,7 +3691,7 @@ bool SIRegisterInfo::isSGPRReg(const MachineRegisterInfo &MRI,
   if (Reg.isVirtual())
     RC = MRI.getRegClass(Reg);
   else
-    RC = getPhysRegBaseClass(Reg);
+    RC = getMinimalPhysRegClass(Reg);
   return RC && isSGPRClass(RC);
 }
 
@@ -4051,7 +4051,7 @@ MachineInstr *SIRegisterInfo::findReachingDef(Register Reg, unsigned SubReg,
 }
 
 MCPhysReg SIRegisterInfo::get32BitRegister(MCPhysReg Reg) const {
-  assert(getRegSizeInBits(*getPhysRegBaseClass(Reg)) <= 32);
+  assert(getRegSizeInBits(*getMinimalPhysRegClass(Reg)) <= 32);
 
   for (const TargetRegisterClass &RC : { AMDGPU::VGPR_32RegClass,
                                          AMDGPU::SReg_32RegClass,

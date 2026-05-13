@@ -209,14 +209,14 @@ getCopyRegClasses(const MachineInstr &Copy,
 
   const TargetRegisterClass *SrcRC = SrcReg.isVirtual()
                                          ? MRI.getRegClass(SrcReg)
-                                         : TRI.getPhysRegBaseClass(SrcReg);
+                                         : TRI.getMinimalPhysRegClass(SrcReg);
 
   // We don't really care about the subregister here.
   // SrcRC = TRI.getSubRegClass(SrcRC, Copy.getOperand(1).getSubReg());
 
   const TargetRegisterClass *DstRC = DstReg.isVirtual()
                                          ? MRI.getRegClass(DstReg)
-                                         : TRI.getPhysRegBaseClass(DstReg);
+                                         : TRI.getMinimalPhysRegClass(DstReg);
 
   return std::pair(SrcRC, DstRC);
 }

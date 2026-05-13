@@ -92,7 +92,7 @@ public:
 
     // If this is an AV register, we have to check if the actual assignment is
     // to an AGPR
-    const TargetRegisterClass *AssignedRC = TRI.getPhysRegBaseClass(PhysReg);
+    const TargetRegisterClass *AssignedRC = TRI.getMinimalPhysRegClass(PhysReg);
     return TRI.isAGPRClass(AssignedRC) ? PhysReg : MCRegister();
   }
 

@@ -1651,7 +1651,7 @@ AMDGPU::Waitcnt WaitcntBrackets::determineAsyncWait(unsigned N) {
 MCPhysReg WaitcntBrackets::determineVGPR16Dependency(const MachineInstr &MI,
                                                      AMDGPU::InstCounterType T,
                                                      MCPhysReg Reg) const {
-  const TargetRegisterClass *RC = Context->TRI.getPhysRegBaseClass(Reg);
+  const TargetRegisterClass *RC = Context->TRI.getMinimalPhysRegClass(Reg);
   unsigned Size = Context->TRI.getRegSizeInBits(*RC);
 
   if (Size != 16 || !Context->ST.hasD16Writes32BitVgpr())

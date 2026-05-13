@@ -399,7 +399,7 @@ const TargetRegisterClass *AMDGPUDAGToDAGISel::getOperandRegClass(SDNode *N,
       }
 
       const SIRegisterInfo *TRI = Subtarget->getRegisterInfo();
-      return TRI->getPhysRegBaseClass(Reg);
+      return TRI->getMinimalPhysRegClass(Reg);
     }
 
     return nullptr;
@@ -1768,7 +1768,7 @@ static bool IsCopyFromSGPR(const SIRegisterInfo &TRI, SDValue Val) {
   auto Reg = cast<RegisterSDNode>(Val.getOperand(1))->getReg();
   if (!Reg.isPhysical())
     return false;
-  const auto *RC = TRI.getPhysRegBaseClass(Reg);
+  const auto *RC = TRI.getMinimalPhysRegClass(Reg);
   return RC && TRI.isSGPRClass(RC);
 }
 

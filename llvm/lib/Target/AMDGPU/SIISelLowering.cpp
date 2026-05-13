@@ -19201,7 +19201,7 @@ SITargetLowering::getRegForInlineAsmConstraint(const TargetRegisterInfo *TRI_,
 
   auto Ret = TargetLowering::getRegForInlineAsmConstraint(TRI, Constraint, VT);
   if (Ret.first)
-    Ret.second = TRI->getPhysRegBaseClass(Ret.first);
+    Ret.second = TRI->getMinimalPhysRegClass(Ret.first);
 
   return Ret;
 }
