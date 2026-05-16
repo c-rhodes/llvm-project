@@ -101,6 +101,11 @@ function(tablegen project ofn)
     list(APPEND LLVM_TABLEGEN_FLAGS "-no-warn-on-unused-template-args")
   endif()
 
+  if (LLVM_TABLEGEN_WARN_ON_UNUSED_DEFS
+      AND "${project}" STREQUAL "LLVM")
+    list(APPEND LLVM_TABLEGEN_FLAGS "-warn-on-unused-defs")
+  endif()
+
   # Build the absolute path for the current input file.
   if (IS_ABSOLUTE ${LLVM_TARGET_DEFINITIONS})
     set(LLVM_TARGET_DEFINITIONS_ABSOLUTE ${LLVM_TARGET_DEFINITIONS})

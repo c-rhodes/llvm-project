@@ -17,6 +17,9 @@
 #include "llvm/TableGen/Main.h"
 #include "TGLexer.h"
 #include "TGParser.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/CommandLine.h"
@@ -77,10 +80,216 @@ static cl::opt<bool> NoWarnOnUnusedTemplateArgs(
     "no-warn-on-unused-template-args",
     cl::desc("Disable unused template argument warnings."));
 
+static cl::opt<bool>
+    WarnOnUnusedDefs("warn-on-unused-defs",
+                     cl::desc("Warn about defs that appear to be unused."));
+
 static int reportError(const char *ProgName, Twine Msg) {
   errs() << ProgName << ": " << Msg;
   errs().flush();
   return 1;
+}
+
+// Seed liveness from top-level classes to avoid obvious false positives for
+// defs that are consumed semantically, not referenced directly.
+static constexpr const char *UnusedDefRootClasses[] = {
+    "AdditionalEncoding",    "Architecture64",      "AsmOperandClass",
+    "AtomicBuiltin",         "CalleeSavedRegs",     "CallingConv",
+    "ComboFuncUnits",        "ComplexPattern",      "CompressPat",
+    "DXILAttribute",         "DXILOp",              "DXILOpClass",
+    "DXILOpParamType",       "DXILShaderStage",     "EltType",
+    "Extension",             "FMVExtension",        "FuncArgType",
+    "Fusion",                "GIComplexOperandMatcher",
+    "GIComplexPatternEquiv", "GICustomOperandRenderer",
+    "GINodeEquiv",           "GISDNodeXFormEquiv",  "GenericAutomaton",
+    "GenericEnum",           "GenericTable",        "GenericType",
+    "HwMode",                "HwModePredicateProlog",
+    "HwModeSelect",          "IIT_Base",            "ImmCheckType",
+    "Inst",                  "InstAlias",           "InstRW",
+    "InstrMapping",          "Instruction",         "InstructionEncoding",
+    "InstructionEquivalenceClass",
+    "IntList",               "IntrinArgSelectType", "Intrinsic",
+    "IntrinsicProperty",     "ItinRW",              "MemEltType",
+    "MemoryQueue",           "MergeRule",           "MergeType",
+    "MnemonicAlias",         "MutualExclusions",    "NCR",
+    "NodeType",              "Opcode",              "Operand",
+    "OperandWithDefaultOps", "Option",              "OptionGroup",
+    "Package",               "PatFrags",            "Pattern",
+    "PfmCountersBinding",    "Predicate",           "PredicateProlog",
+    "PrimitiveType",         "ProcPfmCounters",     "Processor",
+    "ProcessorAlias",        "ProcessorModel",      "RISCVExtension",
+    "RISCVExtensionBitmask", "RISCVProcessorModel", "RISCVProfile",
+    "RISCVTuneFeature",      "RISCVTuneProcessorModel",
+    "RVVBuiltin",            "RVVHeader",           "ReadAdvance",
+    "RegAltNameIndex",       "RegClassByHwMode",    "Register",
+    "RegisterBank",          "RegisterByHwMode",    "RegisterCategory",
+    "RegisterClass",         "RegisterFile",        "RegisterOperand",
+    "RegisterTuples",        "RetireControlUnit",   "RuntimeLibcall",
+    "RuntimeLibcallImpl",    "SDNode",              "SDNodeXForm",
+    "STIPredicate",          "STIPredicateDecl",    "SchedAlias",
+    "SchedReadAdvance",      "SearchIndex",         "Set",
+    "SubCommand",            "SubRegIndex",         "SubtargetFeature",
+    "SystemRuntimeLibrary",  "TIIPredicate",        "Tag",
+    "Target",                "TargetLibCall",       "TextSubstitution",
+    "TokenAlias",            "Type",                "ValueType",
+    "Version",               "WriteRes",
+};
+
+static void collectReferencedDefs(const Init *I,
+                                  SmallPtrSetImpl<const Record *> &Out,
+                                  SmallPtrSetImpl<const Init *> &Visited) {
+  if (!I || !Visited.insert(I).second)
+    return;
+
+  if (const auto *DI = dyn_cast<DefInit>(I)) {
+    Out.insert(DI->getDef());
+    return;
+  }
+  if (const auto *AI = dyn_cast<ArgumentInit>(I)) {
+    collectReferencedDefs(AI->getValue(), Out, Visited);
+    if (AI->isNamed())
+      collectReferencedDefs(AI->getName(), Out, Visited);
+    return;
+  }
+  if (const auto *BI = dyn_cast<BitsInit>(I)) {
+    for (const Init *Bit : BI->getBits())
+      collectReferencedDefs(Bit, Out, Visited);
+    return;
+  }
+  if (const auto *LI = dyn_cast<ListInit>(I)) {
+    for (const Init *Elt : LI->getElements())
+      collectReferencedDefs(Elt, Out, Visited);
+    return;
+  }
+  if (const auto *UO = dyn_cast<UnOpInit>(I)) {
+    collectReferencedDefs(UO->getOperand(), Out, Visited);
+    return;
+  }
+  if (const auto *BO = dyn_cast<BinOpInit>(I)) {
+    collectReferencedDefs(BO->getLHS(), Out, Visited);
+    collectReferencedDefs(BO->getRHS(), Out, Visited);
+    return;
+  }
+  if (const auto *TO = dyn_cast<TernOpInit>(I)) {
+    collectReferencedDefs(TO->getLHS(), Out, Visited);
+    collectReferencedDefs(TO->getMHS(), Out, Visited);
+    collectReferencedDefs(TO->getRHS(), Out, Visited);
+    return;
+  }
+  if (const auto *CO = dyn_cast<CondOpInit>(I)) {
+    for (const Init *Cond : CO->getConds())
+      collectReferencedDefs(Cond, Out, Visited);
+    for (const Init *Val : CO->getVals())
+      collectReferencedDefs(Val, Out, Visited);
+    return;
+  }
+  if (const auto *VI = dyn_cast<VarInit>(I)) {
+    collectReferencedDefs(VI->getNameInit(), Out, Visited);
+    return;
+  }
+  if (const auto *VBI = dyn_cast<VarBitInit>(I)) {
+    collectReferencedDefs(VBI->getBitVar(), Out, Visited);
+    return;
+  }
+  if (const auto *VDI = dyn_cast<VarDefInit>(I)) {
+    for (const ArgumentInit *Arg : VDI->args())
+      collectReferencedDefs(Arg, Out, Visited);
+    return;
+  }
+  if (const auto *FI = dyn_cast<FieldInit>(I)) {
+    collectReferencedDefs(FI->getRecord(), Out, Visited);
+    return;
+  }
+  if (const auto *DAG = dyn_cast<DagInit>(I)) {
+    collectReferencedDefs(DAG->getOperator(), Out, Visited);
+    for (const Init *Arg : DAG->getArgs())
+      collectReferencedDefs(Arg, Out, Visited);
+    return;
+  }
+}
+
+static SmallPtrSet<const Record *, 8>
+collectDirectlyReferencedDefs(const Record &R) {
+  SmallPtrSet<const Record *, 8> Out;
+  SmallPtrSet<const Init *, 32> Visited;
+  for (const RecordVal &Value : R.getValues())
+    collectReferencedDefs(Value.getValue(), Out, Visited);
+  return Out;
+}
+
+struct UnusedDefAnalysis {
+  SmallPtrSet<const Record *, 32> Live;
+};
+
+static UnusedDefAnalysis analyzeUnusedDefs(const RecordKeeper &Records) {
+  DenseMap<const Record *, SmallPtrSet<const Record *, 8>> Refs;
+  UnusedDefAnalysis Analysis;
+  SmallVector<const Record *, 32> Worklist;
+
+  for (const auto &[_, Def] : Records.getDefs()) {
+    const Record *R = Def.get();
+    Refs.try_emplace(R, collectDirectlyReferencedDefs(*R));
+  }
+
+  for (const char *ClassName : UnusedDefRootClasses)
+    append_range(Worklist,
+                 Records.getAllDerivedDefinitionsIfDefined(ClassName));
+
+  for (const std::string &Name : Records.getTrackedUsedRecordNames()) {
+    auto It = Records.getDefs().find(Name);
+    if (It != Records.getDefs().end())
+      Worklist.push_back(It->second.get());
+  }
+
+  while (!Worklist.empty()) {
+    const Record *R = Worklist.pop_back_val();
+    if (!Analysis.Live.insert(R).second)
+      continue;
+
+    auto It = Refs.find(R);
+    if (It == Refs.end())
+      continue;
+    for (const Record *Ref : It->second)
+      Worklist.push_back(Ref);
+  }
+
+  return Analysis;
+}
+
+static void warnOnUnusedDefs(const RecordKeeper &Records,
+                             const UnusedDefAnalysis &Analysis) {
+  auto PrintNormalizedUnusedDefDiag = [](SMLoc Loc, SourceMgr::DiagKind Kind,
+                                         const Twine &Msg) {
+    SMDiagnostic Diag = SrcMgr.GetMessage(Loc, Kind, Msg);
+    SmallString<256> Filename(Diag.getFilename());
+    if (!Filename.empty() && !StringRef(Filename).starts_with("<")) {
+      sys::fs::make_absolute(Filename);
+      sys::path::remove_dots(Filename, /*remove_dot_dot=*/true);
+    }
+    SrcMgr.PrintMessage(errs(),
+                        SMDiagnostic(SrcMgr, Diag.getLoc(), Filename,
+                                     Diag.getLineNo(), Diag.getColumnNo(),
+                                     Diag.getKind(), Diag.getMessage(),
+                                     Diag.getLineContents(), Diag.getRanges(),
+                                     Diag.getFixIts()),
+                        /*ShowColors=*/true);
+  };
+
+  for (const auto &[_, Def] : Records.getDefs()) {
+    const Record *R = Def.get();
+    if (R->isAnonymous() || Analysis.Live.contains(R))
+      continue;
+    ArrayRef<SMLoc> Locs = R->getLoc();
+    SMLoc NullLoc;
+    if (Locs.empty())
+      Locs = NullLoc;
+    PrintNormalizedUnusedDefDiag(Locs.front(), SourceMgr::DK_Warning,
+                                 "def '" + Twine(R->getNameInitAsString()) +
+                                     "' appears to be unused");
+    for (SMLoc Loc : Locs.drop_front())
+      PrintNormalizedUnusedDefDiag(Loc, SourceMgr::DK_Note,
+                                   "instantiated from multiclass");
+  }
 }
 
 /// Create a dependency file for `-d` option.
@@ -163,6 +372,11 @@ int llvm::TableGenMain(const char *argv0, MultiFileTableGenMainFn MainFn) {
   SrcMgr.setIncludeDirs(IncludeDirs);
   SrcMgr.setVirtualFileSystem(vfs::getRealFileSystem());
 
+  if (WarnOnUnusedDefs) {
+    Records.clearTrackedUses();
+    Records.startUseTracking();
+  }
+
   TGParser Parser(SrcMgr, MacroNames, Records, NoWarnOnUnusedTemplateArgs);
 
   if (Parser.ParseFile())
@@ -184,8 +398,15 @@ int llvm::TableGenMain(const char *argv0, MultiFileTableGenMainFn MainFn) {
   if (TableGen::Emitter::ApplyCallback(Records, OutFiles, FilenamePrefix))
     status = MainFn ? MainFn(OutFiles, Records) : 1;
   Timer.stopBackendTimer();
+  if (WarnOnUnusedDefs)
+    Records.stopUseTracking();
   if (status)
     return 1;
+
+  if (WarnOnUnusedDefs) {
+    UnusedDefAnalysis Analysis = analyzeUnusedDefs(Records);
+    warnOnUnusedDefs(Records, Analysis);
+  }
 
   // Always write the depfile, even if the main output hasn't changed.
   // If it's missing, Ninja considers the output dirty. If this was below

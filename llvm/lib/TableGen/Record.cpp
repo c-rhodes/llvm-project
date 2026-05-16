@@ -3145,6 +3145,7 @@ const Init *Record::getValueInit(StringRef FieldName) const {
   if (!R || !R->getValue())
     PrintFatalError(getLoc(), "Record `" + getName() +
       "' does not have a field named `" + FieldName + "'!\n");
+  TrackedRecords.noteUse(this);
   return R->getValue();
 }
 
@@ -3193,9 +3194,11 @@ Record::getValueAsListOfDefs(StringRef FieldName) const {
   const ListInit *List = getValueAsListInit(FieldName);
   std::vector<const Record *> Defs;
   for (const Init *I : List->getElements()) {
-    if (const auto *DI = dyn_cast<DefInit>(I))
-      Defs.push_back(DI->getDef());
-    else
+    if (const auto *DI = dyn_cast<DefInit>(I)) {
+      const Record *Def = DI->getDef();
+      TrackedRecords.noteUse(Def);
+      Defs.push_back(Def);
+    } else
       PrintFatalError(getLoc(), "Record `" + getName() + "', field `" +
                                     FieldName +
                                     "' list is not entirely DefInit!");
@@ -3247,16 +3250,22 @@ Record::getValueAsListOfStrings(StringRef FieldName) const {
 
 const Record *Record::getValueAsDef(StringRef FieldName) const {
   const Init *I = getValueInit(FieldName);
-  if (const auto *DI = dyn_cast<DefInit>(I))
-    return DI->getDef();
+  if (const auto *DI = dyn_cast<DefInit>(I)) {
+    const Record *Def = DI->getDef();
+    TrackedRecords.noteUse(Def);
+    return Def;
+  }
   PrintFatalError(getLoc(), "Record `" + getName() + "', field `" +
     FieldName + "' does not have a def initializer!");
 }
 
 const Record *Record::getValueAsOptionalDef(StringRef FieldName) const {
   const Init *I = getValueInit(FieldName);
-  if (const auto *DI = dyn_cast<DefInit>(I))
-    return DI->getDef();
+  if (const auto *DI = dyn_cast<DefInit>(I)) {
+    const Record *Def = DI->getDef();
+    TrackedRecords.noteUse(Def);
+    return Def;
+  }
   if (isa<UnsetInit>(I))
     return nullptr;
   PrintFatalError(getLoc(), "Record `" + getName() + "', field `" +
@@ -3369,6 +3378,8 @@ RecordKeeper::getAllDerivedDefinitions(StringRef ClassName) const {
   auto [Iter, Inserted] = Cache.try_emplace(ClassName.str());
   if (Inserted)
     Iter->second = getAllDerivedDefinitions(ArrayRef(ClassName));
+  for (const Record *R : Iter->second)
+    noteUse(R);
   return Iter->second;
 }
 
@@ -3392,6 +3403,8 @@ RecordKeeper::getAllDerivedDefinitions(ArrayRef<StringRef> ClassNames) const {
       Defs.push_back(OneDef.second.get());
   }
   llvm::sort(Defs, LessRecord());
+  for (const Record *R : Defs)
+    noteUse(R);
   return Defs;
 }
 

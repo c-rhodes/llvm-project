@@ -408,6 +408,9 @@ endif()
 
 option(LLVM_ENABLE_DAGISEL_COV "Debug: Prints tablegen patterns that were used for selecting" OFF)
 option(LLVM_ENABLE_GISEL_COV "Enable collection of GlobalISel rule coverage" OFF)
+option(LLVM_TABLEGEN_WARN_ON_UNUSED_DEFS
+  "Ask tblgen tools to warn about defs that appear to be unused"
+  OFF)
 if(LLVM_ENABLE_GISEL_COV)
   set(LLVM_GISEL_COV_PREFIX "${CMAKE_BINARY_DIR}/gisel-coverage-" CACHE STRING "Provide a filename prefix to collect the GlobalISel rule coverage")
 endif()

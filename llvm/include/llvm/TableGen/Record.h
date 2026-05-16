@@ -35,6 +35,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <variant>
@@ -2007,7 +2008,10 @@ public:
   /// Get the concrete record with the specified name.
   const Record *getDef(StringRef Name) const {
     auto I = Defs.find(Name);
-    return I == Defs.end() ? nullptr : I->second.get();
+    if (I == Defs.end())
+      return nullptr;
+    noteUse(I->second.get());
+    return I->second.get();
   }
 
   /// Get the \p Init value of the specified global variable.
@@ -2066,6 +2070,22 @@ public:
   ArrayRef<const Record *>
   getAllDerivedDefinitionsIfDefined(StringRef ClassName) const;
 
+  void clearTrackedUses() const { TrackedUsedRecordNames.clear(); }
+
+  void startUseTracking() const { TrackUses = true; }
+
+  void stopUseTracking() const { TrackUses = false; }
+
+  void noteUse(const Record *R) const {
+    if (!TrackUses)
+      return;
+    noteTrackedUse(R);
+  }
+
+  const std::set<std::string> &getTrackedUsedRecordNames() const {
+    return TrackedUsedRecordNames;
+  }
+
   void dump() const;
 
   void dumpAllocationStats(raw_ostream &OS) const;
@@ -2080,6 +2100,14 @@ private:
   RecordMap Classes, Defs;
   mutable std::map<std::string, std::vector<const Record *>> Cache;
   GlobalMap ExtraGlobals;
+  void noteTrackedUse(const Record *R) const {
+    if (!R || R->isAnonymous() || R->isClass() || R->isMultiClass())
+      return;
+    TrackedUsedRecordNames.insert(R->getNameInitAsString());
+  }
+
+  mutable std::set<std::string> TrackedUsedRecordNames;
+  mutable bool TrackUses = false;
 
   /// The internal uniquer implementation of the RecordKeeper.
   std::unique_ptr<detail::RecordKeeperImpl> Impl;
