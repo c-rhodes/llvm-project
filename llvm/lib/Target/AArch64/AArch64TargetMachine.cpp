@@ -784,7 +784,8 @@ void AArch64PassConfig::addPreRegBankSelect() {
 }
 
 bool AArch64PassConfig::addRegBankSelect() {
-  addPass(new RegBankSelect());
+  addPass(new RegBankSelect(RegBankSelect::Fast,
+                            TM->getOptLevel() == CodeGenOptLevel::None));
   return false;
 }
 

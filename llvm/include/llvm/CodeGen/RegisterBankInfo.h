@@ -707,6 +707,12 @@ public:
   virtual const InstructionMapping &
   getInstrMapping(const MachineInstr &MI) const;
 
+  /// Return a cheap register bank for \p MI in fast RegBankSelect.
+  /// Return nullptr to use the normal mapping logic.
+  virtual const RegisterBank *getInstrCheapRegBank(MachineInstr &MI) const {
+    return nullptr;
+  }
+
   /// Get the alternative mappings for \p MI.
   /// Alternative in the sense different from getInstrMapping.
   virtual InstructionMappings

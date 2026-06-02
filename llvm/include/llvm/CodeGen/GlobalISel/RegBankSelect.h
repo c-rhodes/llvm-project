@@ -511,9 +511,16 @@ protected:
   /// Optimization mode of the pass.
   Mode OptMode;
 
+  /// Use assignInstrFast.
+  bool UseFastAssignInstr = false;
+
   /// Assign the register bank of each operand of \p MI.
   /// \return True on success, false otherwise.
   bool assignInstr(MachineInstr &MI);
+
+  /// Try to assign register banks to \p MI using a cheap fast path that does
+  /// not insert repair copies.
+  bool assignInstrFast(MachineInstr &MI);
 
   /// Initialize the field members using \p MF.
   void init(MachineFunction &MF);
@@ -615,7 +622,7 @@ protected:
 
 public:
   /// Create a RegBankSelect pass with the specified \p RunningMode.
-  RegBankSelect(Mode RunningMode = Fast);
+  RegBankSelect(Mode RunningMode = Fast, bool UseFastAssignInstr = false);
 
   StringRef getPassName() const override { return "RegBankSelect"; }
 

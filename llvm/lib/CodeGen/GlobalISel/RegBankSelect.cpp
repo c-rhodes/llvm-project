@@ -77,8 +77,9 @@ INITIALIZE_PASS_END(RegBankSelect, DEBUG_TYPE,
                     "Assign register bank of generic virtual registers", false,
                     false)
 
-RegBankSelect::RegBankSelect(Mode RunningMode)
-    : MachineFunctionPass(ID), OptMode(RunningMode) {
+RegBankSelect::RegBankSelect(Mode RunningMode, bool UseFastAssignInstr)
+    : MachineFunctionPass(ID), OptMode(RunningMode),
+      UseFastAssignInstr(UseFastAssignInstr) {
   if (RegBankSelectMode.getNumOccurrences() != 0) {
     OptMode = RegBankSelectMode;
     if (RegBankSelectMode != RunningMode)
@@ -694,6 +695,63 @@ bool RegBankSelect::assignInstr(MachineInstr &MI) {
   return applyMapping(MI, *BestMapping, RepairPts);
 }
 
+bool RegBankSelect::assignInstrFast(MachineInstr &MI) {
+  LLVM_DEBUG(dbgs() << "Assign: " << MI);
+
+  auto getVRegOperand = [](MachineOperand &MO) -> Register {
+    if (!MO.isReg())
+      return Register();
+    Register Reg = MO.getReg();
+    if (!Reg || Reg.isPhysical())
+      return Register();
+    return Reg;
+  };
+
+  if (const RegisterBank *RB = RBI->getInstrCheapRegBank(MI)) {
+    for (MachineOperand &MO : MI.operands()) {
+      Register Reg = getVRegOperand(MO);
+      if (!Reg || !MO.isDef())
+        continue;
+      if (!RBI->getRegBank(Reg, *MRI, *TRI))
+        MRI->setRegBank(Reg, *RB);
+    }
+    return true;
+  }
+
+  const RegisterBankInfo::InstructionMapping &Mapping =
+      RBI->getInstrMapping(MI);
+  for (unsigned OpIdx = 0, End = Mapping.getNumOperands(); OpIdx != End;
+       ++OpIdx) {
+    MachineOperand &MO = MI.getOperand(OpIdx);
+    Register Reg = getVRegOperand(MO);
+    if (!Reg)
+      continue;
+
+    const RegisterBankInfo::ValueMapping &ValMapping =
+        Mapping.getOperandMapping(OpIdx);
+    if (!ValMapping.isValid() || ValMapping.NumBreakDowns != 1 ||
+        !ValMapping.BreakDown[0].RegBank)
+      return assignInstr(MI);
+
+    const RegisterBank *CurrentRB = RBI->getRegBank(Reg, *MRI, *TRI);
+    const RegisterBank *DesiredRB = ValMapping.BreakDown[0].RegBank;
+    // If a default mapping wants a different bank than one already assigned,
+    // fallback so it can repair the conflict.
+    if (CurrentRB && CurrentRB != DesiredRB &&
+        Mapping.getID() == RegisterBankInfo::DefaultMappingID)
+      return assignInstr(MI);
+    if (!CurrentRB)
+      MRI->setRegBank(Reg, *DesiredRB);
+  }
+
+  if (Mapping.getID() != RegisterBankInfo::DefaultMappingID) {
+    RegisterBankInfo::OperandsMapper OpdMapper(MI, Mapping, *MRI);
+    RBI->applyMapping(MIRBuilder, OpdMapper);
+  }
+
+  return true;
+}
+
 bool RegBankSelect::assignRegisterBanks(MachineFunction &MF) {
   // Walk the function and assign register banks to all operands.
   // Use a RPOT to make sure all registers are assigned before we choose
@@ -723,7 +781,10 @@ bool RegBankSelect::assignRegisterBanks(MachineFunction &MF) {
       if (MI.isImplicitDef())
         continue;
 
-      if (!assignInstr(MI)) {
+      bool Assigned = OptMode == RegBankSelect::Mode::Fast && UseFastAssignInstr
+                          ? assignInstrFast(MI)
+                          : assignInstr(MI);
+      if (!Assigned) {
         reportGISelFailure(MF, *MORE, "gisel-regbankselect",
                            "unable to map instruction", MI);
         return false;
