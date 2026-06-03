@@ -707,6 +707,12 @@ public:
   virtual const InstructionMapping &
   getInstrMapping(const MachineInstr &MI) const;
 
+  /// Try to handle \p MI in a trivial fast regbankselect path without
+  /// computing a full instruction mapping. Targets may use this to assign
+  /// obvious banks cheaply for common instructions. Returns true if the
+  /// instruction was fully handled.
+  virtual bool trySimpleRegBankSelect(MachineInstr &MI) const { return false; }
+
   /// Get the alternative mappings for \p MI.
   /// Alternative in the sense different from getInstrMapping.
   virtual InstructionMappings

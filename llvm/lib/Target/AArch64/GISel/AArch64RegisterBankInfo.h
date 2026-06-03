@@ -161,6 +161,8 @@ public:
   InstructionMappings
   getInstrAlternativeMappings(const MachineInstr &MI) const override;
 
+  bool trySimpleRegBankSelect(MachineInstr &MI) const override;
+
   const InstructionMapping &
   getInstrMapping(const MachineInstr &MI) const override;
 };

@@ -862,6 +862,49 @@ bool AArch64RegisterBankInfo::isLoadFromFPType(const MachineInstr &MI) const {
   return EltTy && EltTy->isFPOrFPVectorTy();
 }
 
+bool AArch64RegisterBankInfo::trySimpleRegBankSelect(MachineInstr &MI) const {
+  MachineRegisterInfo &MRI = MI.getMF()->getRegInfo();
+  const RegisterBank &GPR = getRegBank(AArch64::GPRRegBankID);
+
+  switch (MI.getOpcode()) {
+  case TargetOpcode::G_CONSTANT: {
+    Register Dst = MI.getOperand(0).getReg();
+    LLT DstTy = MRI.getType(Dst);
+    if (!DstTy.isVector() && DstTy.getSizeInBits() <= 64 &&
+        (!DstTy.isScalar() || DstTy.getSizeInBits() >= 32)) {
+      MRI.setRegBank(Dst, GPR);
+      return true;
+    }
+    return false;
+  }
+  case TargetOpcode::G_FRAME_INDEX:
+    MRI.setRegBank(MI.getOperand(0).getReg(), GPR);
+    MRI.setRegClass(MI.getOperand(0).getReg(), &AArch64::GPR64spRegClass);
+    return true;
+  case TargetOpcode::G_LOAD: {
+    Register Dst = MI.getOperand(0).getReg();
+    LLT DstTy = MRI.getType(Dst);
+    if (DstTy.isPointer()) {
+      MRI.setRegBank(Dst, GPR);
+      return true;
+    }
+
+    LLT MemTy = cast<GLoad>(MI).getMMO().getMemoryType();
+    if (!DstTy.isInteger() || !MemTy.isInteger() ||
+        MemTy.getSizeInBits() != DstTy.getSizeInBits())
+      return false;
+
+    if (DstTy.getSizeInBits() != 32 && DstTy.getSizeInBits() != 64)
+      return false;
+
+    MRI.setRegBank(Dst, GPR);
+    return true;
+  }
+  default:
+    return false;
+  }
+}
+
 const RegisterBankInfo::InstructionMapping &
 AArch64RegisterBankInfo::getInstrMapping(const MachineInstr &MI) const {
   const unsigned Opc = MI.getOpcode();

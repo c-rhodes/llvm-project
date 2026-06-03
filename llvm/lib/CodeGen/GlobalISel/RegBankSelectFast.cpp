@@ -53,6 +53,9 @@ static bool assignInstr(MachineInstr &MI, MachineIRBuilder &MIRBuilder,
                         MachineRegisterInfo &MRI) {
   LLVM_DEBUG(dbgs() << "Assign: " << MI);
 
+  if (RBI.trySimpleRegBankSelect(MI))
+    return true;
+
   const RegisterBankInfo::InstructionMapping &Mapping = RBI.getInstrMapping(MI);
   for (unsigned OpIdx = 0, End = Mapping.getNumOperands(); OpIdx != End;
        ++OpIdx) {
