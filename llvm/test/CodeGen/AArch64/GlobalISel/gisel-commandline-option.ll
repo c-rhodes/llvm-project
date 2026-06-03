@@ -1,22 +1,22 @@
 ; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
 ; RUN:   --debugify-and-strip-all-safe=0 \
 ; RUN:   -verify-machineinstrs=0 -O0 \
-; RUN:   | FileCheck %s --check-prefixes=ENABLED,FALLBACK
+; RUN:   | FileCheck %s --check-prefixes=ENABLED,ENABLED-O0,FALLBACK
 
 ; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
 ; RUN:   --debugify-and-strip-all-safe=0 \
 ; RUN:   -verify-machineinstrs -O0 \
-; RUN:   | FileCheck %s --check-prefixes=ENABLED,FALLBACK,VERIFY,VERIFY-O0
+; RUN:   | FileCheck %s --check-prefixes=ENABLED,ENABLED-O0,FALLBACK,VERIFY,VERIFY-O0
 
 ; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
 ; RUN:   --debugify-and-strip-all-safe=0 \
 ; RUN:   -verify-machineinstrs=0 -O0 -aarch64-enable-global-isel-at-O=0 -global-isel-abort=1 \
-; RUN:   | FileCheck %s --check-prefixes=ENABLED,NOFALLBACK
+; RUN:   | FileCheck %s --check-prefixes=ENABLED,ENABLED-O0,NOFALLBACK
 
 ; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
 ; RUN:   --debugify-and-strip-all-safe=0 \
 ; RUN:   -verify-machineinstrs=0 -O0 -aarch64-enable-global-isel-at-O=0 -global-isel-abort=2  \
-; RUN:   | FileCheck %s --check-prefixes=ENABLED,FALLBACK
+; RUN:   | FileCheck %s --check-prefixes=ENABLED,ENABLED-O0,FALLBACK
 
 ; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
 ; RUN:   --debugify-and-strip-all-safe=0 \
@@ -52,6 +52,16 @@
 ; RUN:   -debug-pass=Structure %s -o /dev/null 2>&1 -verify-machineinstrs=0 \
 ; RUN:   | FileCheck %s --check-prefix DISABLED
 
+; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
+; RUN:   --debugify-and-strip-all-safe=0 \
+; RUN:   -verify-machineinstrs=0 -O0 -aarch64-use-regbankselectfast-at-O=-1 \
+; RUN:   | FileCheck %s --check-prefix=FORCE-RBS
+
+; RUN: llc -mtriple=aarch64-- -debug-pass=Structure %s -o /dev/null 2>&1 \
+; RUN:   --debugify-and-strip-all-safe=0 \
+; RUN:   -verify-machineinstrs=0 -global-isel -O1 -aarch64-use-regbankselectfast-at-O=1 \
+; RUN:   | FileCheck %s --check-prefix NOFALLBACK --check-prefix FAST-RBS-O1
+
 ; ENABLED: Safe Stack instrumentation pass
 
 ; ENABLED-O1: Basic Alias Analysis (stateless AA impl)
@@ -69,7 +79,10 @@
 ; ENABLED-O1-NEXT:  Analysis containing CSE Info
 ; ENABLED:  Legalizer
 ; VERIFY-NEXT:   Verify generated machine code
-; ENABLED:  RegBankSelect
+; ENABLED-O0:  RegBankSelectFast
+; ENABLED-O1:  RegBankSelect{{$}}
+; FORCE-RBS:  RegBankSelect{{$}}
+; FAST-RBS-O1: RegBankSelectFast
 ; VERIFY-NEXT:   Verify generated machine code
 ; ENABLED-NEXT: Analysis for ComputingKnownBits
 ; ENABLED-O1-NEXT: Lazy Branch Probability Analysis

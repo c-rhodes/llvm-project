@@ -30,6 +30,7 @@
 #include "llvm/CodeGen/GlobalISel/LoadStoreOpt.h"
 #include "llvm/CodeGen/GlobalISel/Localizer.h"
 #include "llvm/CodeGen/GlobalISel/RegBankSelect.h"
+#include "llvm/CodeGen/GlobalISel/RegBankSelectFast.h"
 #include "llvm/CodeGen/MIRParser/MIParser.h"
 #include "llvm/CodeGen/MachineScheduler.h"
 #include "llvm/CodeGen/Passes.h"
@@ -117,6 +118,11 @@ static cl::opt<bool> EnableAtomicTidy(
     cl::desc("Run SimplifyCFG after expanding atomic operations"
              " to make use of cmpxchg flow-based information"),
     cl::init(true));
+
+static cl::opt<int> UseRegBankSelectFastAtO(
+    "aarch64-use-regbankselectfast-at-O", cl::Hidden,
+    cl::desc("Use RegBankSelectFast at or below an opt level (-1 to disable)"),
+    cl::init(0));
 
 static cl::opt<bool>
 EnableEarlyIfConversion("aarch64-enable-early-ifcvt", cl::Hidden,
@@ -567,6 +573,8 @@ public:
     if (TM.getOptLevel() != CodeGenOptLevel::None)
       substitutePass(&PostRASchedulerID, &PostMachineSchedulerID);
     setEnableSinkAndFold(EnableSinkFold);
+    UseRegBankSelectFast =
+        static_cast<int>(TM.getOptLevel()) <= UseRegBankSelectFastAtO;
   }
 
   AArch64TargetMachine &getAArch64TargetMachine() const {
@@ -595,6 +603,9 @@ public:
   bool addRegAssignAndRewriteOptimized() override;
 
   std::unique_ptr<CSEConfigBase> getCSEConfig() const override;
+
+private:
+  bool UseRegBankSelectFast = false;
 };
 
 } // end anonymous namespace
@@ -784,7 +795,10 @@ void AArch64PassConfig::addPreRegBankSelect() {
 }
 
 bool AArch64PassConfig::addRegBankSelect() {
-  addPass(new RegBankSelect());
+  if (UseRegBankSelectFast)
+    addPass(new RegBankSelectFast());
+  else
+    addPass(new RegBankSelect());
   return false;
 }
 

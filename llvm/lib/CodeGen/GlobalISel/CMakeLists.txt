@@ -28,6 +28,7 @@ add_llvm_component_library(LLVMGlobalISel
   MachineFloatingPointPredicateUtils.cpp
   MachineIRBuilder.cpp
   RegBankSelect.cpp
+  RegBankSelectFast.cpp
   Utils.cpp
 
   ADDITIONAL_HEADER_DIRS
