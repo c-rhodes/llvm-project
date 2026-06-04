@@ -790,7 +790,8 @@ void AArch64PassConfig::addPreRegBankSelect() {
 }
 
 bool AArch64PassConfig::addRegBankSelect() {
-  if (EnableVRegInfoRegBankSelect) {
+  if (getAArch64TargetMachine().isGlobalISelOptNone() ||
+      EnableVRegInfoRegBankSelect) {
     addPass(createAArch64VRegInfoRegBankSelectPass());
     return false;
   }
