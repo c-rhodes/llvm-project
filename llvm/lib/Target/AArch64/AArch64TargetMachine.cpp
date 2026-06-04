@@ -66,6 +66,11 @@ static cl::opt<bool>
                        cl::desc("Enable the conditional branch tuning pass"),
                        cl::init(true), cl::Hidden);
 
+static cl::opt<bool> EnableVRegInfoRegBankSelect(
+    "aarch64-use-vreginfo-regbankselect",
+    cl::desc("Use the experimental AArch64 VRegInfo-only RegBankSelect pass"),
+    cl::init(false), cl::Hidden);
+
 static cl::opt<bool> EnableAArch64CopyPropagation(
     "aarch64-enable-copy-propagation",
     cl::desc("Enable the copy propagation with AArch64 copy instr"),
@@ -265,6 +270,7 @@ LLVMInitializeAArch64Target() {
   initializeAArch64RedundantCopyEliminationLegacyPass(PR);
   initializeAArch64RedundantCondBranchLegacyPass(PR);
   initializeAArch64StorePairSuppressPass(PR);
+  initializeAArch64VRegInfoRegBankSelectPass(PR);
   initializeFalkorHWPFFixPass(PR);
   initializeFalkorMarkStridedAccessesLegacyPass(PR);
   initializeLDTLSCleanupPass(PR);
@@ -784,6 +790,11 @@ void AArch64PassConfig::addPreRegBankSelect() {
 }
 
 bool AArch64PassConfig::addRegBankSelect() {
+  if (EnableVRegInfoRegBankSelect) {
+    addPass(createAArch64VRegInfoRegBankSelectPass());
+    return false;
+  }
+
   addPass(new RegBankSelect());
   return false;
 }
