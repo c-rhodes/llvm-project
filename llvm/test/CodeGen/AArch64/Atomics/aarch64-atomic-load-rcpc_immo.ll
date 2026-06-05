@@ -798,72 +798,104 @@ define i64 @load_atomic_i64_unaligned_seq_cst_const(ptr readonly %ptr) {
 }
 
 define i128 @load_atomic_i128_unaligned_unordered(ptr %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_unordered:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_unordered:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_unordered:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep unordered, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_unordered_const(ptr readonly %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_unordered_const:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_unordered_const:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_unordered_const:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep unordered, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_monotonic(ptr %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_monotonic:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_monotonic:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_monotonic:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep monotonic, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_monotonic_const(ptr readonly %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_monotonic_const:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_monotonic_const:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_monotonic_const:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep monotonic, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_acquire(ptr %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_acquire:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_acquire:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_acquire:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep acquire, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_acquire_const(ptr readonly %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_acquire_const:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_acquire_const:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_acquire_const:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep acquire, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_seq_cst(ptr %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_seq_cst:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_seq_cst:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_seq_cst:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep seq_cst, align 1
     ret i128 %r
 }
 
 define i128 @load_atomic_i128_unaligned_seq_cst_const(ptr readonly %ptr) {
-; CHECK-LABEL: load_atomic_i128_unaligned_seq_cst_const:
-; CHECK:    add x1, x0, #64
-; CHECK:    bl __atomic_load
+; GISEL-LABEL: load_atomic_i128_unaligned_seq_cst_const:
+; GISEL:    add x1, x8, #64
+; GISEL:    bl __atomic_load
+;
+; SDAG-LABEL: load_atomic_i128_unaligned_seq_cst_const:
+; SDAG:    add x1, x0, #64
+; SDAG:    bl __atomic_load
     %gep = getelementptr inbounds i128, ptr %ptr, i32 4
     %r = load atomic i128, ptr %gep seq_cst, align 1
     ret i128 %r

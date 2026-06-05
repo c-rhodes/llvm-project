@@ -2419,11 +2419,26 @@ bool AArch64InstructionSelector::earlySelect(MachineInstr &I) {
     else if (I.getOperand(1).isImm())
       IsZero = I.getOperand(1).getImm() == 0;
 
+    Register DefReg = I.getOperand(0).getReg();
+    LLT Ty = MRI.getType(DefReg);
+    if (!IsZero && Ty.isScalar() && Ty.getSizeInBits() < 32 &&
+        RBI.getRegBank(DefReg, MRI, TRI) ==
+            &RBI.getRegBank(AArch64::GPRRegBankID)) {
+      MachineOperand &ImmOp = I.getOperand(1);
+      if (ImmOp.isCImm())
+        ImmOp.ChangeToImmediate(
+            ImmOp.getCImm()->getValue().zext(32).getZExtValue());
+      else
+        ImmOp.setImm(APInt(Ty.getSizeInBits(), ImmOp.getImm()).getZExtValue());
+
+      I.setDesc(TII.get(AArch64::MOVi32imm));
+      constrainSelectedInstRegOperands(I, TII, TRI, RBI);
+      return true;
+    }
+
     if (!IsZero)
       return false;
 
-    Register DefReg = I.getOperand(0).getReg();
-    LLT Ty = MRI.getType(DefReg);
     if (Ty.getSizeInBits() == 64) {
       I.getOperand(1).ChangeToRegister(AArch64::XZR, false);
       RBI.constrainGenericRegister(DefReg, AArch64::GPR64RegClass, MRI);
@@ -3005,18 +3020,26 @@ bool AArch64InstructionSelector::select(MachineInstr &I) {
     // The code below doesn't support truncating stores, so we need to split it
     // again.
     if (isa<GStore>(LdSt) && ValTy.getSizeInBits() > MemSizeInBits) {
-      unsigned SubReg;
       LLT MemTy = LdSt.getMMO().getMemoryType();
       auto *RC = getRegClassForTypeOnBank(MemTy, RB);
-      if (!getSubRegForClass(RC, TRI, SubReg))
+      if (!RC)
+        return false;
+      auto *ValRC = getRegClassForTypeOnBank(ValTy, RB);
+      if (!ValRC)
         return false;
 
-      // Generate a subreg copy.
-      auto Copy = MIB.buildInstr(TargetOpcode::COPY, {MemTy}, {})
-                      .addReg(ValReg, {}, SubReg)
-                      .getReg(0);
-      RBI.constrainGenericRegister(Copy, *RC, MRI);
-      LdSt.getOperand(0).setReg(Copy);
+      if (ValRC != RC) {
+        unsigned SubReg;
+        if (!getSubRegForClass(RC, TRI, SubReg))
+          return false;
+
+        // Generate a subreg copy.
+        auto Copy = MIB.buildInstr(TargetOpcode::COPY, {MemTy}, {})
+                        .addReg(ValReg, {}, SubReg)
+                        .getReg(0);
+        RBI.constrainGenericRegister(Copy, *RC, MRI);
+        LdSt.getOperand(0).setReg(Copy);
+      }
     } else if (isa<GLoad>(LdSt) && ValTy.getSizeInBits() > MemSizeInBits) {
       // If this is an any-extending load from the FPR bank, split it into a regular
       // load + extend.
@@ -4065,6 +4088,35 @@ bool AArch64InstructionSelector::selectUnmergeValues(MachineInstr &I,
   assert(I.getOpcode() == TargetOpcode::G_UNMERGE_VALUES &&
          "unexpected opcode");
 
+  unsigned NumElts = I.getNumOperands() - 1;
+  Register SrcReg = I.getOperand(NumElts).getReg();
+  Register LoReg = I.getOperand(0).getReg();
+  Register HiReg = I.getOperand(1).getReg();
+  const LLT NarrowTy = MRI.getType(I.getOperand(0).getReg());
+  const LLT WideTy = MRI.getType(SrcReg);
+  auto IsOnRegBank = [&](Register Reg, unsigned BankID) {
+    return RBI.getRegBank(Reg, MRI, TRI)->getID() == BankID;
+  };
+
+  if (NumElts == 2 && NarrowTy == LLT::scalar(64) &&
+      WideTy == LLT::scalar(128) && IsOnRegBank(LoReg, AArch64::GPRRegBankID) &&
+      IsOnRegBank(HiReg, AArch64::GPRRegBankID) &&
+      IsOnRegBank(SrcReg, AArch64::FPRRegBankID)) {
+    Register LoFPR = MRI.createVirtualRegister(&AArch64::FPR64RegClass);
+    MachineInstr &ExtractLo = *MIB.buildInstr(TargetOpcode::COPY, {LoFPR}, {})
+                                   .addReg(SrcReg, {}, AArch64::dsub);
+    MachineInstr &Lo = *MIB.buildInstr(AArch64::FMOVDXr, {LoReg}, {LoFPR});
+    MachineInstr &Hi =
+        *MIB.buildInstr(AArch64::FMOVDXHighr, {HiReg}, {SrcReg}).addImm(1);
+
+    RBI.constrainGenericRegister(SrcReg, AArch64::FPR128RegClass, MRI);
+    constrainSelectedInstRegOperands(ExtractLo, TII, TRI, RBI);
+    constrainSelectedInstRegOperands(Lo, TII, TRI, RBI);
+    constrainSelectedInstRegOperands(Hi, TII, TRI, RBI);
+    I.eraseFromParent();
+    return true;
+  }
+
   // TODO: Handle unmerging into GPRs and from scalars to scalars.
   if (RBI.getRegBank(I.getOperand(0).getReg(), MRI, TRI)->getID() !=
           AArch64::FPRRegBankID ||
@@ -4077,11 +4129,6 @@ bool AArch64InstructionSelector::selectUnmergeValues(MachineInstr &I,
 
   // The last operand is the vector source register, and every other operand is
   // a register to unpack into.
-  unsigned NumElts = I.getNumOperands() - 1;
-  Register SrcReg = I.getOperand(NumElts).getReg();
-  const LLT NarrowTy = MRI.getType(I.getOperand(0).getReg());
-  const LLT WideTy = MRI.getType(SrcReg);
-
   assert(WideTy.getSizeInBits() > NarrowTy.getSizeInBits() &&
          "source register size too small!");
 

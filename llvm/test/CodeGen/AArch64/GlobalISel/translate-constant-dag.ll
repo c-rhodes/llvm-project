@@ -8,34 +8,26 @@ define void @test_const(ptr %dst) {
   ; CHECK: bb.1.entry:
   ; CHECK-NEXT:   liveins: $x0
   ; CHECK-NEXT: {{  $}}
-  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:gpr64sp(p0) = COPY $x0
-  ; CHECK-NEXT:   [[C:%[0-9]+]]:gpr32(i8) = G_CONSTANT i8 10
-  ; CHECK-NEXT:   G_STORE [[C]](i8), [[COPY]](p0) :: (store (i8) into %ir.dst)
-  ; CHECK-NEXT:   [[C1:%[0-9]+]]:gpr(i64) = G_CONSTANT i64 1
-  ; CHECK-NEXT:   [[PTR_ADD:%[0-9]+]]:gpr(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C1]](i64)
-  ; CHECK-NEXT:   [[C2:%[0-9]+]]:gpr32(i8) = G_CONSTANT i8 20
-  ; CHECK-NEXT:   G_STORE [[C2]](i8), [[PTR_ADD]](p0) :: (store (i8) into %ir.dst + 1)
-  ; CHECK-NEXT:   [[C3:%[0-9]+]]:gpr(i64) = G_CONSTANT i64 2
-  ; CHECK-NEXT:   [[PTR_ADD1:%[0-9]+]]:gpr(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C3]](i64)
-  ; CHECK-NEXT:   G_STORE [[C]](i8), [[PTR_ADD1]](p0) :: (store (i8) into %ir.dst + 2)
-  ; CHECK-NEXT:   [[C4:%[0-9]+]]:gpr(i64) = G_CONSTANT i64 3
-  ; CHECK-NEXT:   [[PTR_ADD2:%[0-9]+]]:gpr(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C4]](i64)
-  ; CHECK-NEXT:   G_STORE [[C2]](i8), [[PTR_ADD2]](p0) :: (store (i8) into %ir.dst + 3)
-  ; CHECK-NEXT:   [[C5:%[0-9]+]]:gpr(i64) = G_CONSTANT i64 4
-  ; CHECK-NEXT:   [[PTR_ADD3:%[0-9]+]]:gpr(p0) = nuw inbounds G_PTR_ADD [[COPY]], [[C5]](i64)
-  ; CHECK-NEXT:   [[C6:%[0-9]+]]:gpr32(i8) = G_CONSTANT i8 50
-  ; CHECK-NEXT:   STRBBui [[C6]](i8), [[COPY]](p0), 4 :: (store (i8) into %ir.dst + 4)
-  ; CHECK-NEXT:   STRBBui [[C]](i8), [[COPY]](p0), 5 :: (store (i8) into %ir.dst + 5)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 6 :: (store (i8) into %ir.dst + 6)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 7 :: (store (i8) into %ir.dst + 7)
-  ; CHECK-NEXT:   STRBBui [[C]](i8), [[COPY]](p0), 0 :: (store (i8) into %ir.dst)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 1 :: (store (i8) into %ir.dst + 1)
-  ; CHECK-NEXT:   STRBBui [[C]](i8), [[COPY]](p0), 2 :: (store (i8) into %ir.dst + 2)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 3 :: (store (i8) into %ir.dst + 3)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 4 :: (store (i8) into %ir.dst + 4)
-  ; CHECK-NEXT:   STRBBui [[C]](i8), [[COPY]](p0), 5 :: (store (i8) into %ir.dst + 5)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 6 :: (store (i8) into %ir.dst + 6)
-  ; CHECK-NEXT:   STRBBui [[C2]](i8), [[COPY]](p0), 7 :: (store (i8) into %ir.dst + 7)
+  ; CHECK-NEXT:   [[COPY:%[0-9]+]]:gpr64sp = COPY $x0
+  ; CHECK-NEXT:   [[MOVi32imm:%[0-9]+]]:gpr32 = MOVi32imm 10
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm]], [[COPY]], 0 :: (store (i8) into %ir.dst)
+  ; CHECK-NEXT:   [[MOVi32imm1:%[0-9]+]]:gpr32 = MOVi32imm 20
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 1 :: (store (i8) into %ir.dst + 1)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm]], [[COPY]], 2 :: (store (i8) into %ir.dst + 2)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 3 :: (store (i8) into %ir.dst + 3)
+  ; CHECK-NEXT:   [[MOVi32imm2:%[0-9]+]]:gpr32 = MOVi32imm 50
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm2]], [[COPY]], 4 :: (store (i8) into %ir.dst + 4)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm]], [[COPY]], 5 :: (store (i8) into %ir.dst + 5)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 6 :: (store (i8) into %ir.dst + 6)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 7 :: (store (i8) into %ir.dst + 7)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm]], [[COPY]], 0 :: (store (i8) into %ir.dst)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 1 :: (store (i8) into %ir.dst + 1)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm]], [[COPY]], 2 :: (store (i8) into %ir.dst + 2)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 3 :: (store (i8) into %ir.dst + 3)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 4 :: (store (i8) into %ir.dst + 4)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm]], [[COPY]], 5 :: (store (i8) into %ir.dst + 5)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 6 :: (store (i8) into %ir.dst + 6)
+  ; CHECK-NEXT:   STRBBui [[MOVi32imm1]], [[COPY]], 7 :: (store (i8) into %ir.dst + 7)
   ; CHECK-NEXT:   RET_ReallyLR
 entry:
  %updated = insertvalue
