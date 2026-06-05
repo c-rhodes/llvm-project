@@ -1018,9 +1018,11 @@ define i8 @atomic_load_relaxed_8(ptr %p, i32 %off32) #0 {
 ; CHECK-NOLSE-O0-LABEL: atomic_load_relaxed_8:
 ; CHECK-NOLSE-O0:       ; %bb.0:
 ; CHECK-NOLSE-O0-NEXT:    ldrb w9, [x0, #4095]
-; CHECK-NOLSE-O0-NEXT:    ldrb w8, [x0, w1, sxtw]
+; CHECK-NOLSE-O0-NEXT:    add x8, x0, w1, sxtw
+; CHECK-NOLSE-O0-NEXT:    ldrb w8, [x8]
 ; CHECK-NOLSE-O0-NEXT:    add w8, w8, w9, uxtb
-; CHECK-NOLSE-O0-NEXT:    ldurb w9, [x0, #-256]
+; CHECK-NOLSE-O0-NEXT:    subs x9, x0, #256
+; CHECK-NOLSE-O0-NEXT:    ldrb w9, [x9]
 ; CHECK-NOLSE-O0-NEXT:    add w8, w8, w9, uxtb
 ; CHECK-NOLSE-O0-NEXT:    add x9, x0, #291, lsl #12 ; =1191936
 ; CHECK-NOLSE-O0-NEXT:    ldrb w9, [x9]
@@ -1030,9 +1032,11 @@ define i8 @atomic_load_relaxed_8(ptr %p, i32 %off32) #0 {
 ; CHECK-OUTLINE-O0-LABEL: atomic_load_relaxed_8:
 ; CHECK-OUTLINE-O0:       ; %bb.0:
 ; CHECK-OUTLINE-O0-NEXT:    ldrb w9, [x0, #4095]
-; CHECK-OUTLINE-O0-NEXT:    ldrb w8, [x0, w1, sxtw]
+; CHECK-OUTLINE-O0-NEXT:    add x8, x0, w1, sxtw
+; CHECK-OUTLINE-O0-NEXT:    ldrb w8, [x8]
 ; CHECK-OUTLINE-O0-NEXT:    add w8, w8, w9, uxtb
-; CHECK-OUTLINE-O0-NEXT:    ldurb w9, [x0, #-256]
+; CHECK-OUTLINE-O0-NEXT:    subs x9, x0, #256
+; CHECK-OUTLINE-O0-NEXT:    ldrb w9, [x9]
 ; CHECK-OUTLINE-O0-NEXT:    add w8, w8, w9, uxtb
 ; CHECK-OUTLINE-O0-NEXT:    add x9, x0, #291, lsl #12 ; =1191936
 ; CHECK-OUTLINE-O0-NEXT:    ldrb w9, [x9]
@@ -1054,9 +1058,11 @@ define i8 @atomic_load_relaxed_8(ptr %p, i32 %off32) #0 {
 ; CHECK-LSE-O0-LABEL: atomic_load_relaxed_8:
 ; CHECK-LSE-O0:       ; %bb.0:
 ; CHECK-LSE-O0-NEXT:    ldrb w9, [x0, #4095]
-; CHECK-LSE-O0-NEXT:    ldrb w8, [x0, w1, sxtw]
+; CHECK-LSE-O0-NEXT:    add x8, x0, w1, sxtw
+; CHECK-LSE-O0-NEXT:    ldrb w8, [x8]
 ; CHECK-LSE-O0-NEXT:    add w8, w8, w9, uxtb
-; CHECK-LSE-O0-NEXT:    ldurb w9, [x0, #-256]
+; CHECK-LSE-O0-NEXT:    subs x9, x0, #256
+; CHECK-LSE-O0-NEXT:    ldrb w9, [x9]
 ; CHECK-LSE-O0-NEXT:    add w8, w8, w9, uxtb
 ; CHECK-LSE-O0-NEXT:    add x9, x0, #291, lsl #12 ; =1191936
 ; CHECK-LSE-O0-NEXT:    ldrb w9, [x9]
@@ -1108,9 +1114,11 @@ define i16 @atomic_load_relaxed_16(ptr %p, i32 %off32) #0 {
 ; CHECK-NOLSE-O0-LABEL: atomic_load_relaxed_16:
 ; CHECK-NOLSE-O0:       ; %bb.0:
 ; CHECK-NOLSE-O0-NEXT:    ldrh w9, [x0, #8190]
-; CHECK-NOLSE-O0-NEXT:    ldrh w8, [x0, w1, sxtw #1]
+; CHECK-NOLSE-O0-NEXT:    add x8, x0, w1, sxtw #1
+; CHECK-NOLSE-O0-NEXT:    ldrh w8, [x8]
 ; CHECK-NOLSE-O0-NEXT:    add w8, w8, w9, uxth
-; CHECK-NOLSE-O0-NEXT:    ldurh w9, [x0, #-256]
+; CHECK-NOLSE-O0-NEXT:    subs x9, x0, #256
+; CHECK-NOLSE-O0-NEXT:    ldrh w9, [x9]
 ; CHECK-NOLSE-O0-NEXT:    add w8, w8, w9, uxth
 ; CHECK-NOLSE-O0-NEXT:    add x9, x0, #291, lsl #12 ; =1191936
 ; CHECK-NOLSE-O0-NEXT:    ldrh w9, [x9]
@@ -1120,9 +1128,11 @@ define i16 @atomic_load_relaxed_16(ptr %p, i32 %off32) #0 {
 ; CHECK-OUTLINE-O0-LABEL: atomic_load_relaxed_16:
 ; CHECK-OUTLINE-O0:       ; %bb.0:
 ; CHECK-OUTLINE-O0-NEXT:    ldrh w9, [x0, #8190]
-; CHECK-OUTLINE-O0-NEXT:    ldrh w8, [x0, w1, sxtw #1]
+; CHECK-OUTLINE-O0-NEXT:    add x8, x0, w1, sxtw #1
+; CHECK-OUTLINE-O0-NEXT:    ldrh w8, [x8]
 ; CHECK-OUTLINE-O0-NEXT:    add w8, w8, w9, uxth
-; CHECK-OUTLINE-O0-NEXT:    ldurh w9, [x0, #-256]
+; CHECK-OUTLINE-O0-NEXT:    subs x9, x0, #256
+; CHECK-OUTLINE-O0-NEXT:    ldrh w9, [x9]
 ; CHECK-OUTLINE-O0-NEXT:    add w8, w8, w9, uxth
 ; CHECK-OUTLINE-O0-NEXT:    add x9, x0, #291, lsl #12 ; =1191936
 ; CHECK-OUTLINE-O0-NEXT:    ldrh w9, [x9]
@@ -1144,9 +1154,11 @@ define i16 @atomic_load_relaxed_16(ptr %p, i32 %off32) #0 {
 ; CHECK-LSE-O0-LABEL: atomic_load_relaxed_16:
 ; CHECK-LSE-O0:       ; %bb.0:
 ; CHECK-LSE-O0-NEXT:    ldrh w9, [x0, #8190]
-; CHECK-LSE-O0-NEXT:    ldrh w8, [x0, w1, sxtw #1]
+; CHECK-LSE-O0-NEXT:    add x8, x0, w1, sxtw #1
+; CHECK-LSE-O0-NEXT:    ldrh w8, [x8]
 ; CHECK-LSE-O0-NEXT:    add w8, w8, w9, uxth
-; CHECK-LSE-O0-NEXT:    ldurh w9, [x0, #-256]
+; CHECK-LSE-O0-NEXT:    subs x9, x0, #256
+; CHECK-LSE-O0-NEXT:    ldrh w9, [x9]
 ; CHECK-LSE-O0-NEXT:    add w8, w8, w9, uxth
 ; CHECK-LSE-O0-NEXT:    add x9, x0, #291, lsl #12 ; =1191936
 ; CHECK-LSE-O0-NEXT:    ldrh w9, [x9]
@@ -1676,7 +1688,6 @@ define i32 @load_zext(ptr %p8, ptr %p16) {
 ; CHECK-NOLSE-O0:       ; %bb.0:
 ; CHECK-NOLSE-O0-NEXT:    ldarb w9, [x0]
 ; CHECK-NOLSE-O0-NEXT:    ldrh w8, [x1]
-; CHECK-NOLSE-O0-NEXT:    uxth w8, w8
 ; CHECK-NOLSE-O0-NEXT:    add w0, w8, w9, uxtb
 ; CHECK-NOLSE-O0-NEXT:    ret
 ;
@@ -1684,7 +1695,6 @@ define i32 @load_zext(ptr %p8, ptr %p16) {
 ; CHECK-OUTLINE-O0:       ; %bb.0:
 ; CHECK-OUTLINE-O0-NEXT:    ldarb w9, [x0]
 ; CHECK-OUTLINE-O0-NEXT:    ldrh w8, [x1]
-; CHECK-OUTLINE-O0-NEXT:    uxth w8, w8
 ; CHECK-OUTLINE-O0-NEXT:    add w0, w8, w9, uxtb
 ; CHECK-OUTLINE-O0-NEXT:    ret
 ;
@@ -1700,7 +1710,6 @@ define i32 @load_zext(ptr %p8, ptr %p16) {
 ; CHECK-LSE-O0:       ; %bb.0:
 ; CHECK-LSE-O0-NEXT:    ldaprb w9, [x0]
 ; CHECK-LSE-O0-NEXT:    ldrh w8, [x1]
-; CHECK-LSE-O0-NEXT:    uxth w8, w8
 ; CHECK-LSE-O0-NEXT:    add w0, w8, w9, uxtb
 ; CHECK-LSE-O0-NEXT:    ret
   %val1.8 = load atomic i8, ptr %p8 acquire, align 1
@@ -6503,29 +6512,17 @@ define { ptr, i1 } @cmpxchg_ptr(ptr %ptr, ptr %desired, ptr %new) {
 }
 
 define internal double @bitcast_to_double(ptr %ptr) {
-; CHECK-NOLSE-O1-LABEL: bitcast_to_double:
-; CHECK-NOLSE-O1:       ; %bb.0:
-; CHECK-NOLSE-O1-NEXT:    ldar x8, [x0]
-; CHECK-NOLSE-O1-NEXT:    fmov d0, x8
-; CHECK-NOLSE-O1-NEXT:    ret
+; CHECK-NOLSE-LABEL: bitcast_to_double:
+; CHECK-NOLSE:       ; %bb.0:
+; CHECK-NOLSE-NEXT:    ldar x8, [x0]
+; CHECK-NOLSE-NEXT:    fmov d0, x8
+; CHECK-NOLSE-NEXT:    ret
 ;
-; CHECK-OUTLINE-O1-LABEL: bitcast_to_double:
-; CHECK-OUTLINE-O1:       ; %bb.0:
-; CHECK-OUTLINE-O1-NEXT:    ldar x8, [x0]
-; CHECK-OUTLINE-O1-NEXT:    fmov d0, x8
-; CHECK-OUTLINE-O1-NEXT:    ret
-;
-; CHECK-NOLSE-O0-LABEL: bitcast_to_double:
-; CHECK-NOLSE-O0:       ; %bb.0:
-; CHECK-NOLSE-O0-NEXT:    ldar x0, [x0]
-; CHECK-NOLSE-O0-NEXT:    fmov d0, x0
-; CHECK-NOLSE-O0-NEXT:    ret
-;
-; CHECK-OUTLINE-O0-LABEL: bitcast_to_double:
-; CHECK-OUTLINE-O0:       ; %bb.0:
-; CHECK-OUTLINE-O0-NEXT:    ldar x0, [x0]
-; CHECK-OUTLINE-O0-NEXT:    fmov d0, x0
-; CHECK-OUTLINE-O0-NEXT:    ret
+; CHECK-OUTLINE-LABEL: bitcast_to_double:
+; CHECK-OUTLINE:       ; %bb.0:
+; CHECK-OUTLINE-NEXT:    ldar x8, [x0]
+; CHECK-OUTLINE-NEXT:    fmov d0, x8
+; CHECK-OUTLINE-NEXT:    ret
 ;
 ; CHECK-LSE-O1-LABEL: bitcast_to_double:
 ; CHECK-LSE-O1:       ; %bb.0:
@@ -6535,8 +6532,8 @@ define internal double @bitcast_to_double(ptr %ptr) {
 ;
 ; CHECK-LSE-O0-LABEL: bitcast_to_double:
 ; CHECK-LSE-O0:       ; %bb.0:
-; CHECK-LSE-O0-NEXT:    ldar x0, [x0]
-; CHECK-LSE-O0-NEXT:    fmov d0, x0
+; CHECK-LSE-O0-NEXT:    ldar x8, [x0]
+; CHECK-LSE-O0-NEXT:    fmov d0, x8
 ; CHECK-LSE-O0-NEXT:    ret
   %load = load atomic i64, ptr %ptr seq_cst, align 8
   %bitcast = bitcast i64 %load to double
@@ -6544,29 +6541,17 @@ define internal double @bitcast_to_double(ptr %ptr) {
 }
 
 define internal float @bitcast_to_float(ptr %ptr) {
-; CHECK-NOLSE-O1-LABEL: bitcast_to_float:
-; CHECK-NOLSE-O1:       ; %bb.0:
-; CHECK-NOLSE-O1-NEXT:    ldar w8, [x0]
-; CHECK-NOLSE-O1-NEXT:    fmov s0, w8
-; CHECK-NOLSE-O1-NEXT:    ret
+; CHECK-NOLSE-LABEL: bitcast_to_float:
+; CHECK-NOLSE:       ; %bb.0:
+; CHECK-NOLSE-NEXT:    ldar w8, [x0]
+; CHECK-NOLSE-NEXT:    fmov s0, w8
+; CHECK-NOLSE-NEXT:    ret
 ;
-; CHECK-OUTLINE-O1-LABEL: bitcast_to_float:
-; CHECK-OUTLINE-O1:       ; %bb.0:
-; CHECK-OUTLINE-O1-NEXT:    ldar w8, [x0]
-; CHECK-OUTLINE-O1-NEXT:    fmov s0, w8
-; CHECK-OUTLINE-O1-NEXT:    ret
-;
-; CHECK-NOLSE-O0-LABEL: bitcast_to_float:
-; CHECK-NOLSE-O0:       ; %bb.0:
-; CHECK-NOLSE-O0-NEXT:    ldar w0, [x0]
-; CHECK-NOLSE-O0-NEXT:    fmov s0, w0
-; CHECK-NOLSE-O0-NEXT:    ret
-;
-; CHECK-OUTLINE-O0-LABEL: bitcast_to_float:
-; CHECK-OUTLINE-O0:       ; %bb.0:
-; CHECK-OUTLINE-O0-NEXT:    ldar w0, [x0]
-; CHECK-OUTLINE-O0-NEXT:    fmov s0, w0
-; CHECK-OUTLINE-O0-NEXT:    ret
+; CHECK-OUTLINE-LABEL: bitcast_to_float:
+; CHECK-OUTLINE:       ; %bb.0:
+; CHECK-OUTLINE-NEXT:    ldar w8, [x0]
+; CHECK-OUTLINE-NEXT:    fmov s0, w8
+; CHECK-OUTLINE-NEXT:    ret
 ;
 ; CHECK-LSE-O1-LABEL: bitcast_to_float:
 ; CHECK-LSE-O1:       ; %bb.0:
@@ -6576,8 +6561,8 @@ define internal float @bitcast_to_float(ptr %ptr) {
 ;
 ; CHECK-LSE-O0-LABEL: bitcast_to_float:
 ; CHECK-LSE-O0:       ; %bb.0:
-; CHECK-LSE-O0-NEXT:    ldar w0, [x0]
-; CHECK-LSE-O0-NEXT:    fmov s0, w0
+; CHECK-LSE-O0-NEXT:    ldar w8, [x0]
+; CHECK-LSE-O0-NEXT:    fmov s0, w8
 ; CHECK-LSE-O0-NEXT:    ret
   %load = load atomic i32, ptr %ptr seq_cst, align 8
   %bitcast = bitcast i32 %load to float
@@ -6601,16 +6586,14 @@ define internal half @bitcast_to_half(ptr %ptr) {
 ;
 ; CHECK-NOLSE-O0-LABEL: bitcast_to_half:
 ; CHECK-NOLSE-O0:       ; %bb.0:
-; CHECK-NOLSE-O0-NEXT:    ldarh w0, [x0]
-; CHECK-NOLSE-O0-NEXT:    fmov s0, w0
-; CHECK-NOLSE-O0-NEXT:    ; kill: def $h0 killed $h0 killed $s0
+; CHECK-NOLSE-O0-NEXT:    ldarh w8, [x0]
+; CHECK-NOLSE-O0-NEXT:    fmov s0, w8
 ; CHECK-NOLSE-O0-NEXT:    ret
 ;
 ; CHECK-OUTLINE-O0-LABEL: bitcast_to_half:
 ; CHECK-OUTLINE-O0:       ; %bb.0:
-; CHECK-OUTLINE-O0-NEXT:    ldarh w0, [x0]
-; CHECK-OUTLINE-O0-NEXT:    fmov s0, w0
-; CHECK-OUTLINE-O0-NEXT:    ; kill: def $h0 killed $h0 killed $s0
+; CHECK-OUTLINE-O0-NEXT:    ldarh w8, [x0]
+; CHECK-OUTLINE-O0-NEXT:    fmov s0, w8
 ; CHECK-OUTLINE-O0-NEXT:    ret
 ;
 ; CHECK-LSE-O1-LABEL: bitcast_to_half:
@@ -6622,9 +6605,8 @@ define internal half @bitcast_to_half(ptr %ptr) {
 ;
 ; CHECK-LSE-O0-LABEL: bitcast_to_half:
 ; CHECK-LSE-O0:       ; %bb.0:
-; CHECK-LSE-O0-NEXT:    ldarh w0, [x0]
-; CHECK-LSE-O0-NEXT:    fmov s0, w0
-; CHECK-LSE-O0-NEXT:    ; kill: def $h0 killed $h0 killed $s0
+; CHECK-LSE-O0-NEXT:    ldarh w8, [x0]
+; CHECK-LSE-O0-NEXT:    fmov h0, w8
 ; CHECK-LSE-O0-NEXT:    ret
   %load = load atomic i16, ptr %ptr seq_cst, align 8
   %bitcast = bitcast i16 %load to half

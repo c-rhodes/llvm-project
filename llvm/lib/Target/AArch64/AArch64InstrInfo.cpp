@@ -6193,6 +6193,36 @@ void AArch64InstrInfo::copyPhysReg(MachineBasicBlock &MBB,
         .addReg(SrcReg, getKillRegState(KillSrc));
     return;
   }
+  // Copies between GPR32 and FPR16.
+  if (AArch64::FPR16RegClass.contains(DestReg) &&
+      AArch64::GPR32RegClass.contains(SrcReg)) {
+    if (AArch64::WZR == SrcReg) {
+      BuildMI(MBB, I, DL, get(AArch64::FMOVH0), DestReg);
+    } else if (Subtarget.hasFullFP16()) {
+      BuildMI(MBB, I, DL, get(AArch64::FMOVWHr), DestReg)
+          .addReg(SrcReg, getKillRegState(KillSrc));
+    } else {
+      MCRegister DestRegS = RI.getMatchingSuperReg(DestReg, AArch64::hsub,
+                                                   &AArch64::FPR32RegClass);
+      BuildMI(MBB, I, DL, get(AArch64::FMOVWSr), DestRegS)
+          .addReg(SrcReg, getKillRegState(KillSrc));
+    }
+    return;
+  }
+  if (AArch64::GPR32RegClass.contains(DestReg) &&
+      AArch64::FPR16RegClass.contains(SrcReg)) {
+    if (Subtarget.hasFullFP16()) {
+      BuildMI(MBB, I, DL, get(AArch64::FMOVHWr), DestReg)
+          .addReg(SrcReg, getKillRegState(KillSrc));
+    } else {
+      MCRegister SrcRegS = RI.getMatchingSuperReg(SrcReg, AArch64::hsub,
+                                                  &AArch64::FPR32RegClass);
+      BuildMI(MBB, I, DL, get(AArch64::FMOVSWr), DestReg)
+          .addReg(SrcRegS, RegState::Undef)
+          .addReg(SrcReg, RegState::Implicit | getKillRegState(KillSrc));
+    }
+    return;
+  }
   // Copies between GPR32 and FPR32.
   if (AArch64::FPR32RegClass.contains(DestReg) &&
       AArch64::GPR32RegClass.contains(SrcReg)) {
