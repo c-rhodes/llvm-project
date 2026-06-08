@@ -429,6 +429,10 @@ RegisterBankInfo::getInstrPossibleMappings(const MachineInstr &MI) const {
   return PossibleMappings;
 }
 
+const RegisterBank *RegisterBankInfo::getRegBankForType(LLT) const {
+  return nullptr;
+}
+
 RegisterBankInfo::InstructionMappings
 RegisterBankInfo::getInstrAlternativeMappings(const MachineInstr &MI) const {
   // No alternative for MI.

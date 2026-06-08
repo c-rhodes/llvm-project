@@ -730,6 +730,11 @@ public:
   /// \post !returnedVal.empty().
   InstructionMappings getInstrPossibleMappings(const MachineInstr &MI) const;
 
+  /// Return the register bank for \p Ty when assigning register banks directly
+  /// from virtual-register type information, or nullptr if no bank can be
+  /// chosen.
+  virtual const RegisterBank *getRegBankForType(LLT Ty) const;
+
   /// Apply \p OpdMapper.getInstrMapping() to \p OpdMapper.getMI().
   /// After this call \p OpdMapper.getMI() may not be valid anymore.
   /// \p OpdMapper.getInstrMapping().getID() carries the information of

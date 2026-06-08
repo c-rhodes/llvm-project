@@ -223,6 +223,20 @@ AArch64RegisterBankInfo::AArch64RegisterBankInfo(
   llvm::call_once(InitializeRegisterBankFlag, InitializeRegisterBankOnce);
 }
 
+const RegisterBank *AArch64RegisterBankInfo::getRegBankForType(LLT Ty) const {
+  if (!Ty.isValid())
+    return nullptr;
+
+  if (Ty.isVector() || Ty.isFloatOrFloatVector() ||
+      Ty.getSizeInBits().getKnownMinValue() > 64)
+    return &getRegBank(AArch64::FPRRegBankID);
+
+  if (Ty.isPointer() || Ty.isScalar())
+    return &getRegBank(AArch64::GPRRegBankID);
+
+  return nullptr;
+}
+
 unsigned AArch64RegisterBankInfo::copyCost(const RegisterBank &A,
                                            const RegisterBank &B,
                                            const TypeSize Size) const {

@@ -45,7 +45,8 @@ define i8 @load_atomic_i8_aligned_monotonic_const(ptr readonly %ptr) {
 
 define i8 @load_atomic_i8_aligned_acquire(ptr %ptr) {
 ; GISEL-LABEL: load_atomic_i8_aligned_acquire:
-; GISEL:    ldapurb w0, [x0, #4]
+; GISEL:    add x8, x0, #4
+; GISEL:    ldaprb w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i8_aligned_acquire:
 ; SDAG-AVOIDLDAPUR:    add x8, x0, #4
@@ -60,7 +61,8 @@ define i8 @load_atomic_i8_aligned_acquire(ptr %ptr) {
 
 define i8 @load_atomic_i8_aligned_acquire_const(ptr readonly %ptr) {
 ; GISEL-LABEL: load_atomic_i8_aligned_acquire_const:
-; GISEL:    ldapurb w0, [x0, #4]
+; GISEL:    add x8, x0, #4
+; GISEL:    ldaprb w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i8_aligned_acquire_const:
 ; SDAG-AVOIDLDAPUR:    add x8, x0, #4
@@ -125,7 +127,8 @@ define i16 @load_atomic_i16_aligned_monotonic_const(ptr readonly %ptr) {
 
 define i16 @load_atomic_i16_aligned_acquire(ptr %ptr) {
 ; GISEL-LABEL: load_atomic_i16_aligned_acquire:
-; GISEL:    ldapurh w0, [x0, #8]
+; GISEL:    add x8, x0, #8
+; GISEL:    ldaprh w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i16_aligned_acquire:
 ; SDAG-AVOIDLDAPUR:    add x8, x0, #8
@@ -140,7 +143,8 @@ define i16 @load_atomic_i16_aligned_acquire(ptr %ptr) {
 
 define i16 @load_atomic_i16_aligned_acquire_const(ptr readonly %ptr) {
 ; GISEL-LABEL: load_atomic_i16_aligned_acquire_const:
-; GISEL:    ldapurh w0, [x0, #8]
+; GISEL:    add x8, x0, #8
+; GISEL:    ldaprh w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i16_aligned_acquire_const:
 ; SDAG-AVOIDLDAPUR:    add x8, x0, #8
@@ -433,7 +437,8 @@ define i8 @load_atomic_i8_unaligned_monotonic_const(ptr readonly %ptr) {
 
 define i8 @load_atomic_i8_unaligned_acquire(ptr %ptr) {
 ; GISEL-LABEL: load_atomic_i8_unaligned_acquire:
-; GISEL:    ldapurb w0, [x0, #4]
+; GISEL:    add x8, x0, #4
+; GISEL:    ldaprb w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i8_unaligned_acquire:
 ; SDAG-AVOIDLDAPUR:    add x8, x0, #4
@@ -448,7 +453,8 @@ define i8 @load_atomic_i8_unaligned_acquire(ptr %ptr) {
 
 define i8 @load_atomic_i8_unaligned_acquire_const(ptr readonly %ptr) {
 ; GISEL-LABEL: load_atomic_i8_unaligned_acquire_const:
-; GISEL:    ldapurb w0, [x0, #4]
+; GISEL:    add x8, x0, #4
+; GISEL:    ldaprb w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i8_unaligned_acquire_const:
 ; SDAG-AVOIDLDAPUR:    add x8, x0, #4
@@ -898,7 +904,8 @@ define i128 @load_atomic_i128_unaligned_seq_cst_const(ptr readonly %ptr) {
 define i8 @load_atomic_i8_from_gep() {
 ; GISEL-LABEL: load_atomic_i8_from_gep:
 ; GISEL:    bl init
-; GISEL:    ldapurb w0, [x8, #1]
+; GISEL:    add x8, x8, #1
+; GISEL:    ldaprb w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i8_from_gep:
 ; SDAG-AVOIDLDAPUR:    bl init
@@ -918,7 +925,8 @@ define i8 @load_atomic_i8_from_gep() {
 define i16 @load_atomic_i16_from_gep() {
 ; GISEL-LABEL: load_atomic_i16_from_gep:
 ; GISEL:    bl init
-; GISEL:    ldapurh w0, [x8, #2]
+; GISEL:    add x8, x8, #2
+; GISEL:    ldaprh w0, [x8]
 ;
 ; SDAG-AVOIDLDAPUR-LABEL: load_atomic_i16_from_gep:
 ; SDAG-AVOIDLDAPUR:    bl init

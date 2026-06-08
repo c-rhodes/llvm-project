@@ -30,6 +30,7 @@
 #include "llvm/CodeGen/GlobalISel/LoadStoreOpt.h"
 #include "llvm/CodeGen/GlobalISel/Localizer.h"
 #include "llvm/CodeGen/GlobalISel/RegBankSelect.h"
+#include "llvm/CodeGen/GlobalISel/TypeBasedRegBankSelect.h"
 #include "llvm/CodeGen/MIRParser/MIParser.h"
 #include "llvm/CodeGen/MachineScheduler.h"
 #include "llvm/CodeGen/Passes.h"
@@ -65,6 +66,11 @@ static cl::opt<bool>
     EnableCondBrTuning("aarch64-enable-cond-br-tune",
                        cl::desc("Enable the conditional branch tuning pass"),
                        cl::init(true), cl::Hidden);
+
+static cl::opt<bool> EnableTypeBasedRegBankSelect(
+    "aarch64-use-type-based-regbankselect",
+    cl::desc("Use the type-based RegBankSelect pass"), cl::init(false),
+    cl::Hidden);
 
 static cl::opt<bool> EnableAArch64CopyPropagation(
     "aarch64-enable-copy-propagation",
@@ -780,6 +786,12 @@ void AArch64PassConfig::addPreRegBankSelect() {
 }
 
 bool AArch64PassConfig::addRegBankSelect() {
+  if (getAArch64TargetMachine().isGlobalISelOptNone() ||
+      EnableTypeBasedRegBankSelect) {
+    addPass(new TypeBasedRegBankSelect());
+    return false;
+  }
+
   addPass(new RegBankSelect());
   return false;
 }

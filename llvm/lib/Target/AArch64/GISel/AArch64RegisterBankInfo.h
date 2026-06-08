@@ -158,6 +158,8 @@ public:
   const RegisterBank &getRegBankFromRegClass(const TargetRegisterClass &RC,
                                              LLT Ty) const override;
 
+  const RegisterBank *getRegBankForType(LLT Ty) const override;
+
   InstructionMappings
   getInstrAlternativeMappings(const MachineInstr &MI) const override;
 
