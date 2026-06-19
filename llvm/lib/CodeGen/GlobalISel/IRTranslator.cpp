@@ -3842,9 +3842,6 @@ bool IRTranslator::translate(const Instruction &Inst) {
   CurBuilder->setPCSections(Inst.getMetadata(LLVMContext::MD_pcsections));
   CurBuilder->setMMRAMetadata(Inst.getMetadata(LLVMContext::MD_mmra));
 
-  if (TLI->fallBackToDAGISel(Inst))
-    return false;
-
   switch (Inst.getOpcode()) {
 #define HANDLE_INST(NUM, OPCODE, CLASS)                                        \
   case Instruction::OPCODE:                                                    \
@@ -4388,11 +4385,13 @@ bool IRTranslator::runOnMachineFunction(MachineFunction &CurMF) {
         Verifier.setCurrentInst(&Inst);
 #endif // ifndef NDEBUG
 
-        // Translate any debug-info attached to the instruction.
-        translateDbgInfo(Inst, *CurBuilder);
+        if (!TLI->fallBackToDAGISel(Inst)) {
+          // Translate any debug-info attached to the instruction.
+          translateDbgInfo(Inst, *CurBuilder);
 
-        if (translate(Inst))
-          continue;
+          if (translate(Inst))
+            continue;
+        }
 
         OptimizationRemarkMissed R("gisel-irtranslator", "GISelFailure",
                                    Inst.getDebugLoc(), BB);
