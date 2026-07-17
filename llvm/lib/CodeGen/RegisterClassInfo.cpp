@@ -47,10 +47,13 @@ void RegisterClassInfo::runOnMachineFunction(const MachineFunction &mf,
   auto &STI = MF->getSubtarget();
 
   // Allocate new array the first time we see a new target.
-  if (STI.getRegisterInfo() != TRI || Reverse != Rev) {
+  bool TRIChanged = STI.getRegisterInfo() != TRI;
+  if (TRIChanged || Reverse != Rev) {
     Reverse = Rev;
     TRI = STI.getRegisterInfo();
     RegClass.reset(new RCInfo[TRI->getNumRegClasses()]);
+    if (TRIChanged)
+      PSetRegClasses.clear();
     Update = true;
   }
 
@@ -203,25 +206,23 @@ void RegisterClassInfo::compute(const TargetRegisterClass *RC) const {
 /// nonoverlapping reserved registers. However, computing the allocation order
 /// for all register classes would be too expensive.
 unsigned RegisterClassInfo::computePSetLimit(unsigned Idx) const {
-  const TargetRegisterClass *RC = nullptr;
-  unsigned NumRCUnits = 0;
-  for (const TargetRegisterClass &C : TRI->regclasses()) {
-    const int *PSetID = TRI->getRegClassPressureSets(&C);
-    for (; *PSetID != -1; ++PSetID) {
-      if ((unsigned)*PSetID == Idx)
-        break;
-    }
-    if (*PSetID == -1)
-      continue;
+  if (PSetRegClasses.empty()) {
+    PSetRegClasses.assign(TRI->getNumRegPressureSets(), nullptr);
 
-    // Found a register class that counts against this pressure set.
-    // For efficiency, only compute the set order for the largest set.
-    unsigned NUnits = TRI->getRegClassWeight(&C).WeightLimit;
-    if (!RC || NUnits > NumRCUnits) {
-      RC = &C;
-      NumRCUnits = NUnits;
+    // Find the register class with the greatest WeightLimit for each pressure
+    // set. The cache is invalidated if TargetRegisterInfo changes.
+    for (const TargetRegisterClass &C : TRI->regclasses()) {
+      unsigned NUnits = TRI->getRegClassWeight(&C).WeightLimit;
+      for (const int *PSetID = TRI->getRegClassPressureSets(&C); *PSetID != -1;
+           ++PSetID) {
+        const TargetRegisterClass *&RC = PSetRegClasses[*PSetID];
+        if (!RC || NUnits > TRI->getRegClassWeight(RC).WeightLimit)
+          RC = &C;
+      }
     }
   }
+
+  const TargetRegisterClass *RC = PSetRegClasses[Idx];
   assert(RC && "Failed to find register class");
   compute(RC);
   unsigned NAllocatableRegs = getNumAllocatableRegs(RC);

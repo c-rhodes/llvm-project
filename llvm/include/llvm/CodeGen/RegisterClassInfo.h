@@ -69,6 +69,9 @@ class RegisterClassInfo {
   // Reserved registers in the current MF.
   BitVector Reserved;
 
+  // Register class with the greatest WeightLimit for each pressure set.
+  mutable SmallVector<const TargetRegisterClass *, 0> PSetRegClasses;
+
   std::unique_ptr<unsigned[]> PSetLimits;
 
   // The register cost values.
