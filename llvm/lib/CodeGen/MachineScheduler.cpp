@@ -266,7 +266,7 @@ static cl::opt<bool>
 static cl::opt<unsigned>
     FastClusterThreshold("fast-cluster-threshold", cl::Hidden,
                          cl::desc("The threshold for fast cluster"),
-                         cl::init(1000));
+                         cl::init(250));
 
 #if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
 static cl::opt<bool> MISchedDumpScheduleTrace(
