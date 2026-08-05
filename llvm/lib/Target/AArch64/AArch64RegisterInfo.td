@@ -189,35 +189,41 @@ def FPSR : AArch64Reg<0, "fpsr">;
 // GPR register classes with the intersections of GPR32/GPR32sp and
 // GPR64/GPR64sp for use by the coalescer.
 def GPR32common : RegisterClass<"AArch64", [i32], 32, (sequence "W%u", 0, 30)> {
-  let AltOrders = [(rotl GPR32common, 8)];
+  let AltOrders = [(add (sequence "W%u", 8, 18), (sequence "W%u", 0, 7),
+                        (sequence "W%u", 28, 19), W29, W30)];
   let AltOrderSelect = [{ return 1; }];
 }
 def GPR64common : RegisterClass<"AArch64", [i64], 64,
                                 (add (sequence "X%u", 0, 28), FP, LR)> {
-  let AltOrders = [(rotl GPR64common, 8)];
+  let AltOrders = [(add (sequence "X%u", 8, 18), (sequence "X%u", 0, 7),
+                        (sequence "X%u", 28, 19), FP, LR)];
   let AltOrderSelect = [{ return 1; }];
   let DecoderMethod = "DecodeSimpleRegisterClass<AArch64::GPR64commonRegClassID, 0, 31>";
 }
 // GPR register classes which exclude SP/WSP.
 def GPR32 : RegisterClass<"AArch64", [i32], 32, (add GPR32common, WZR)> {
-  let AltOrders = [(rotl GPR32, 8)];
+  let AltOrders = [(add (sequence "W%u", 8, 18), (sequence "W%u", 0, 7),
+                        (sequence "W%u", 28, 19), W29, W30, WZR)];
   let AltOrderSelect = [{ return 1; }];
   let DecoderMethod = "DecodeSimpleRegisterClass<AArch64::GPR32RegClassID, 0, 32>";
 }
 def GPR64 : RegisterClass<"AArch64", [i64], 64, (add GPR64common, XZR)> {
-  let AltOrders = [(rotl GPR64, 8)];
+  let AltOrders = [(add (sequence "X%u", 8, 18), (sequence "X%u", 0, 7),
+                        (sequence "X%u", 28, 19), FP, LR, XZR)];
   let AltOrderSelect = [{ return 1; }];
   let DecoderMethod = "DecodeSimpleRegisterClass<AArch64::GPR64RegClassID, 0, 32>";
 }
 
 // GPR register classes which include SP/WSP.
 def GPR32sp : RegisterClass<"AArch64", [i32], 32, (add GPR32common, WSP)> {
-  let AltOrders = [(rotl GPR32sp, 8)];
+  let AltOrders = [(add (sequence "W%u", 8, 18), (sequence "W%u", 0, 7),
+                        (sequence "W%u", 28, 19), W29, W30, WSP)];
   let AltOrderSelect = [{ return 1; }];
   let DecoderMethod = "DecodeSimpleRegisterClass<AArch64::GPR32spRegClassID, 0, 32>";
 }
 def GPR64sp : RegisterClass<"AArch64", [i64], 64, (add GPR64common, SP)> {
-  let AltOrders = [(rotl GPR64sp, 8)];
+  let AltOrders = [(add (sequence "X%u", 8, 18), (sequence "X%u", 0, 7),
+                        (sequence "X%u", 28, 19), FP, LR, SP)];
   let AltOrderSelect = [{ return 1; }];
   let DecoderMethod = "DecodeSimpleRegisterClass<AArch64::GPR64spRegClassID,0, 32>";
 }
@@ -279,7 +285,9 @@ def tcGPRnotx16x17 : RegisterClass<"AArch64", [i64], 64, (sub tcGPR64, X16, X17)
 // This is used for pseudo-instructions that are actually implemented using a
 // procedure call.
 def GPR64noip : RegisterClass<"AArch64", [i64], 64, (sub GPR64, X16, X17, LR)> {
-  let AltOrders = [(rotl GPR64noip, 8)];
+  let AltOrders = [(add (sequence "X%u", 8, 15), X18,
+                        (sequence "X%u", 0, 7),
+                        (sequence "X%u", 28, 19), FP, XZR)];
   let AltOrderSelect = [{ return 1; }];
 }
 
