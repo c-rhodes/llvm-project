@@ -101,7 +101,7 @@ static void addBlockLiveOuts(LiveRegUnits &LiveUnits,
     LiveUnits.addRegMasked(LO.PhysReg, LO.LaneMask);
 }
 
-/// Adds all callee saved registers to \p LiveUnits.
+/// Adds callee-saved registers that are live on return to \p LiveUnits.
 static void addCalleeSavedRegs(LiveRegUnits &LiveUnits,
                                const MachineFunction &MF) {
   const MachineRegisterInfo &MRI = MF.getRegInfo();
@@ -118,6 +118,14 @@ static void addCalleeSavedRegs(LiveRegUnits &LiveUnits,
   }
 }
 
+/// Adds all callee-saved registers to \p LiveUnits.
+static void addAllCalleeSavedRegs(LiveRegUnits &LiveUnits,
+                                  const MachineFunction &MF) {
+  const MachineRegisterInfo &MRI = MF.getRegInfo();
+  for (const MCPhysReg *CSR = MRI.getCalleeSavedRegs(); CSR && *CSR; ++CSR)
+    LiveUnits.addReg(*CSR);
+}
+
 void LiveRegUnits::addPristines(const MachineFunction &MF) {
   const MachineFrameInfo &MFI = MF.getFrameInfo();
   if (!MFI.isCalleeSavedInfoValid())
@@ -127,7 +135,7 @@ void LiveRegUnits::addPristines(const MachineFunction &MF) {
   if (empty()) {
     /// Add all callee saved regs, then remove the ones that are saved and
     /// restored.
-    addCalleeSavedRegs(*this, MF);
+    addAllCalleeSavedRegs(*this, MF);
     /// Remove the ones that are not saved/restored; they are pristine.
     for (const CalleeSavedInfo &Info : MFI.getCalleeSavedInfo())
       removeReg(Info.getReg());
@@ -138,7 +146,7 @@ void LiveRegUnits::addPristines(const MachineFunction &MF) {
   /// set of pristine registers in a separate object.
   /// Add all callee saved regs, then remove the ones that are saved+restored.
   LiveRegUnits Pristine(*TRI);
-  addCalleeSavedRegs(Pristine, MF);
+  addAllCalleeSavedRegs(Pristine, MF);
   /// Remove the ones that are not saved/restored; they are pristine.
   for (const CalleeSavedInfo &Info : MFI.getCalleeSavedInfo())
     Pristine.removeReg(Info.getReg());
