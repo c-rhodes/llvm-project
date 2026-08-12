@@ -14,6 +14,7 @@
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Analysis/BasicAliasAnalysis.h"
 #include "llvm/Analysis/CallGraphSCCPass.h"
@@ -1042,6 +1043,9 @@ bool TargetPassConfig::addCoreISelPasses() {
 
     addPreLegalizeMachineIR();
 
+    if (AreStatisticsEnabled())
+      addPass(createPreLegalizerInstCountPass());
+
     if (addLegalizeMachineIR())
       return true;
 
@@ -1049,10 +1053,16 @@ bool TargetPassConfig::addCoreISelPasses() {
     // wants to run some passes.
     addPreRegBankSelect();
 
+    if (AreStatisticsEnabled())
+      addPass(createPreRegBankSelectInstCountPass());
+
     if (addRegBankSelect())
       return true;
 
     addPreGlobalInstructionSelect();
+
+    if (AreStatisticsEnabled())
+      addPass(createPreInstructionSelectInstCountPass());
 
     if (addGlobalInstructionSelect())
       return true;
