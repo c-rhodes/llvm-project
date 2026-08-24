@@ -969,7 +969,6 @@ ArrayRef<Register> IRTranslatorImpl::getOrCreateVRegs(const Value &Val) {
 
   // Create entry for this type.
   auto *VRegs = VMap.getVRegs(Val);
-  auto *Offsets = VMap.getOffsets(Val);
 
   if (!Val.getType()->isTokenTy())
     assert(Val.getType()->isSized() &&
@@ -978,8 +977,6 @@ ArrayRef<Register> IRTranslatorImpl::getOrCreateVRegs(const Value &Val) {
   // Fast-path values that lower to a single vreg.
   if (!Val.getType()->isAggregateType()) {
     LLT Ty = getLLTForType(*Val.getType(), *DL);
-    if (Offsets->empty())
-      Offsets->push_back(0);
     VRegs->push_back(MRI->createGenericVirtualRegister(Ty));
     if (isa<Constant>(Val)) {
       bool Success = translate(cast<Constant>(Val), VRegs->front());
@@ -995,6 +992,7 @@ ArrayRef<Register> IRTranslatorImpl::getOrCreateVRegs(const Value &Val) {
   }
 
   SmallVector<LLT, 4> SplitTys;
+  auto *Offsets = VMap.getOffsets(Val);
   computeValueLLTs(*DL, *Val.getType(), SplitTys,
                    Offsets->empty() ? Offsets : nullptr);
 
