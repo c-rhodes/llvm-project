@@ -1317,29 +1317,29 @@ bool RegBankSelectImpl::assignRegisterBanks(
     // Set a sensible insertion point so that subsequent calls to
     // MIRBuilder.
     MIRBuilder.setMBB(*MBB);
-    SmallVector<MachineInstr *> WorkList(
-        make_pointer_range(reverse(MBB->instrs())));
-
-    while (!WorkList.empty()) {
-      MachineInstr &MI = *WorkList.pop_back_val();
+    MachineInstr *MI = MBB->empty() ? nullptr : &MBB->front();
+    while (MI) {
+      MachineInstr &Current = *MI;
+      MI = MI->getNextNode();
 
       // Ignore target-specific post-isel instructions: they should use proper
       // regclasses.
-      if (isTargetSpecificOpcode(MI.getOpcode()) && !MI.isPreISelOpcode())
+      if (isTargetSpecificOpcode(Current.getOpcode()) &&
+          !Current.isPreISelOpcode())
         continue;
 
       // Ignore inline asm instructions: they should use physical
       // registers/regclasses
-      if (MI.isInlineAsm())
+      if (Current.isInlineAsm())
         continue;
 
       // Ignore IMPLICIT_DEF which must have a regclass.
-      if (MI.isImplicitDef())
+      if (Current.isImplicitDef())
         continue;
 
-      if (!assignInstr(MI, GetCachedMBFI, GetCachedMBPI)) {
+      if (!assignInstr(Current, GetCachedMBFI, GetCachedMBPI)) {
         reportGISelFailure(MF, *MORE, "gisel-regbankselect",
-                           "unable to map instruction", MI);
+                           "unable to map instruction", Current);
         return false;
       }
     }
