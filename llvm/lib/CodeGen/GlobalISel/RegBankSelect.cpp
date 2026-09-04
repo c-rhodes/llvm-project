@@ -1317,11 +1317,10 @@ bool RegBankSelectImpl::assignRegisterBanks(
     // Set a sensible insertion point so that subsequent calls to
     // MIRBuilder.
     MIRBuilder.setMBB(*MBB);
-    SmallVector<MachineInstr *> WorkList(
-        make_pointer_range(reverse(MBB->instrs())));
-
-    while (!WorkList.empty()) {
-      MachineInstr &MI = *WorkList.pop_back_val();
+    MachineInstr *NextMI = MBB->empty() ? nullptr : &MBB->front();
+    while (NextMI) {
+      MachineInstr &MI = *NextMI;
+      NextMI = MI.getNextNode();
 
       // Ignore target-specific post-isel instructions: they should use proper
       // regclasses.
