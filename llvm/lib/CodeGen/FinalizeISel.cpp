@@ -47,7 +47,10 @@ static std::pair<bool, bool> runImpl(MachineFunction &MF) {
   const TargetInstrInfo *TII = MF.getSubtarget().getInstrInfo();
   const TargetLowering *TLI = MF.getSubtarget().getTargetLowering();
 
-  TLI->finalizeLowering(MF);
+  // GlobalISel finalizes lowering in InstructionSelect before it clears the
+  // generic virtual register types.
+  if (!MF.getProperties().hasSelected())
+    TLI->finalizeLowering(MF);
 
   // Iterate through each instruction in the function, looking for pseudos.
   for (MachineFunction::iterator I = MF.begin(), E = MF.end(); I != E; ++I) {
