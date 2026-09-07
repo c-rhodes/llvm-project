@@ -376,6 +376,17 @@ void AArch64MCInstLower::Lower(const MachineInstr *MI, MCInst &OutMI) const {
   OutMI.setOpcode(MI->getOpcode());
 
   for (const MachineOperand &MO : MI->operands()) {
+    // Avoid out-of-line lowerOperand calls for common MC operands.
+    if (MO.isReg()) {
+      if (!MO.isImplicit())
+        OutMI.addOperand(MCOperand::createReg(MO.getReg()));
+      continue;
+    }
+    if (MO.isImm()) {
+      OutMI.addOperand(MCOperand::createImm(MO.getImm()));
+      continue;
+    }
+
     MCOperand MCOp;
     if (lowerOperand(MO, MCOp))
       OutMI.addOperand(MCOp);
