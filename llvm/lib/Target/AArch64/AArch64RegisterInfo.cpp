@@ -836,19 +836,19 @@ bool AArch64RegisterInfo::needsFrameBaseReg(MachineInstr *MI,
   //        and pick a real one.
   Offset += 128; // 128 bytes of spill slots
 
-  // If there is a frame pointer, try using it.
-  // The FP is only available if there is no dynamic realignment. We
-  // don't know for sure yet whether we'll need that, so we guess based
-  // on whether there are any local variables that would trigger it.
-  if (TFI->hasFP(MF) && isFrameOffsetLegal(MI, AArch64::FP, FPOffset))
-    return false;
-
   // If we can reference via the stack pointer or base pointer, try that.
   // FIXME: This (and the code that resolves the references) can be improved
   //        to only disallow SP relative references in the live range of
   //        the VLA(s). In practice, it's unclear how much difference that
   //        would make, but it may be worth doing.
   if (isFrameOffsetLegal(MI, AArch64::SP, Offset))
+    return false;
+
+  // If there is a frame pointer, try using it.
+  // The FP is only available if there is no dynamic realignment. We
+  // don't know for sure yet whether we'll need that, so we guess based
+  // on whether there are any local variables that would trigger it.
+  if (TFI->hasFP(MF) && isFrameOffsetLegal(MI, AArch64::FP, FPOffset))
     return false;
 
   // If even offset 0 is illegal, we don't want a virtual base register.
