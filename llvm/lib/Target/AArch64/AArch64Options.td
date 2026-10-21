@@ -268,7 +268,7 @@ defm : BoolField<"aarch64-enable-gisel-ldst-postlegal", "false",
   "Enable GlobalISel's post-legalizer load/store optimization pass">;
 defm : BoolField<"aarch64-enable-gisel-ldst-prelegal", "true",
   "Enable GlobalISel's pre-legalizer load/store optimization pass">;
-defm : ValueField<"aarch64-enable-global-isel-at-O", "int", "0",
+defm : ValueField<"aarch64-enable-global-isel-at-O", "int", "-1",
   "Enable GlobalISel at or below an opt level (-1 to disable)">;
 // FIXME: Unify control over GlobalMerge.
 defm : OptionalBoolField<"aarch64-enable-global-merge",
