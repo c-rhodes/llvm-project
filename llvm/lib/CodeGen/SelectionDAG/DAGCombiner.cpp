@@ -292,7 +292,7 @@ static const MDNode *getCommonMemCacheHint(const RangeT &Nodes) {
 
       // Skip handle nodes as they can't usefully be combined and confuse the
       // zero-use deletion strategy.
-      if (N->getOpcode() == ISD::HANDLENODE)
+      if (LLVM_UNLIKELY(N->getOpcode() == ISD::HANDLENODE))
         return;
 
       if (SkipIfCombinedBefore && N->getCombinerWorklistIndex() == -2)
